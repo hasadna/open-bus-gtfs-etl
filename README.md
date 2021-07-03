@@ -1,2 +1,2 @@
 # open-bus-gtfs-etl
-GTFS ETL for Stride
+GTFS ETL for Stride.
