@@ -1,0 +1,7 @@
+pytest
+pytest-cov
+partridge==0.11.0
+tqdm
+gtfs_kit
+pandas
+jsonschema
