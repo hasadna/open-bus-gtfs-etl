@@ -1,1 +1,7 @@
 pytest
+pytest-cov
+partridge
+tqdm
+gtfs_kit
+pandas
+jsonschema
