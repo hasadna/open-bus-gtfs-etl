@@ -1,4 +1,7 @@
 /venv/
 /.idea/
 /__pycache__/
+gtfs_extractor/__pycache__/
+gtfs_stat/__pycache__/
 .coverage
+/htmlcov/

@@ -5,3 +5,4 @@ tqdm
 gtfs_kit
 pandas
 jsonschema
+pydantic
