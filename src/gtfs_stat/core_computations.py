@@ -3,14 +3,15 @@
 import datetime
 import logging
 import zipfile
+from pathlib import Path
 from typing import List
 
 import gtfs_kit as gtfstk
 import pandas as pd
 import partridge as ptg
 
-from gtfs_stat.aggregations import generate_trip_stats_aggregation, generate_route_stats_aggregation
-from gtfs_stat.partridge_helper import parse_time_no_seconds_column
+from src.gtfs_stat.aggregations import generate_trip_stats_aggregation, generate_route_stats_aggregation
+from src.gtfs_stat.partridge_helper import parse_time_no_seconds_column
 
 TRIP_ID_TO_DATE_TXT_NAME = 'TripIdToDate.txt'
 TARIFF_TXT_NAME = 'Tariff.txt'
@@ -18,7 +19,7 @@ TARIFF_TO_REFORM_ZONE = 'StationToReformZone.txt'
 CLUSTER_TO_LINE_TXT_NAME = 'ClusterToLine.txt'
 
 
-def _read_almost_valid_csv_to_df(zip_path, file_name_in_zip, real_columns):
+def _read_almost_valid_csv_to_df(zip_path: Path, file_name_in_zip, real_columns):
     """ Read almost-valid csv files, which are not actually valid, while jiggling the columns a bit. """
 
     cols = real_columns + ['EXTRA']
@@ -50,7 +51,7 @@ def _fix_trip_to_date_columns(trip_date_df: pd.DataFrame) -> None:
     trip_date_df.loc[series, 'start_time'] = trip_date_df[series]['start_time'] % (24 * 3600)
 
 
-def get_trip_id_to_date_df(local_file_path: str,
+def get_trip_id_to_date_df(local_file_path: Path,
                            date: datetime.date,
                            columns: List[str] = None) -> pd.DataFrame:
     """
