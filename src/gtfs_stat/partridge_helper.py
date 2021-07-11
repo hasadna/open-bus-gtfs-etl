@@ -1,5 +1,6 @@
 import datetime
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import partridge as ptg
@@ -15,11 +16,12 @@ def get_partridge_filter_for_date(zip_path: str, date: datetime.date):
     }
 
 
-def get_partridge_feed_by_date(zip_path: str, date: datetime.date):
+def get_partridge_feed_by_date(zip_path: Path, date: datetime.date):
+    zip_path = zip_path.as_posix()
     return ptg.feed(zip_path, view=get_partridge_filter_for_date(zip_path, date))
 
 
-def prepare_partridge_feed(date: datetime.date, gtfs_file_full_path: str):
+def prepare_partridge_feed(date: datetime.date, gtfs_file_full_path: Path):
     return get_partridge_feed_by_date(gtfs_file_full_path, date)
 
 

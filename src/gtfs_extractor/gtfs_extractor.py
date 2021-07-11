@@ -34,14 +34,14 @@ class GTFSFiles(BaseModel):
 
 
 class GtfsRetriever:
-    def __init__(self, folder: str, app_config: GtfsExtractorConfig = GTFS_EXTRACTOR_CONFIG):
+    def __init__(self, folder: Path, app_config: GtfsExtractorConfig = GTFS_EXTRACTOR_CONFIG):
         self.folder = folder
         self.app_config = app_config
 
     class Config:
         arbitrary_types_allowed = True
 
-    def retrieve_gtfs_files(self):
+    def retrieve_gtfs_files(self) -> GTFSFiles:
         args: Dict[str, FileConfig] = dict(gtfs=self.app_config.gtfs_file, tariff=self.app_config.tariff_file,
                                            cluster_to_line=self.app_config.cluster_file,
                                            trip_id_to_date=self.app_config.trip_id_to_date_file)
@@ -58,4 +58,3 @@ class GtfsRetriever:
         with closing(request.urlopen(url)) as r:
             with local_file.open('wb') as f:
                 shutil.copyfileobj(r, f)
-
