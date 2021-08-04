@@ -23,7 +23,8 @@ class GtfsExtractorConfig(BaseModel):
     trip_id_to_date_file: FileConfig
 
 
-GTFS_EXTRACTOR_CONFIG = GtfsExtractorConfig.parse_file(Path(__file__).parent.joinpath(__CONFIGURATION_FILE_NAME))
+GTFS_EXTRACTOR_CONFIG = GtfsExtractorConfig.parse_file(Path(__file__)
+                                                       .parent.joinpath(__CONFIGURATION_FILE_NAME))
 
 
 class GTFSFiles(BaseModel):
@@ -42,7 +43,8 @@ class GtfsRetriever:
         arbitrary_types_allowed = True
 
     def retrieve_gtfs_files(self) -> GTFSFiles:
-        args: Dict[str, FileConfig] = dict(gtfs=self.app_config.gtfs_file, tariff=self.app_config.tariff_file,
+        args: Dict[str, FileConfig] = dict(gtfs=self.app_config.gtfs_file,
+                                           tariff=self.app_config.tariff_file,
                                            cluster_to_line=self.app_config.cluster_file,
                                            trip_id_to_date=self.app_config.trip_id_to_date_file)
 

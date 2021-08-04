@@ -10,8 +10,8 @@ import gtfs_kit as gtfstk
 import pandas as pd
 import partridge as ptg
 
-from src.gtfs_stat.aggregations import generate_trip_stats_aggregation, generate_route_stats_aggregation
-from src.gtfs_stat.partridge_helper import parse_time_no_seconds_column
+from open_bus_gtfs_etl.gtfs_stat.aggregations import generate_trip_stats_aggregation, generate_route_stats_aggregation
+from open_bus_gtfs_etl.gtfs_stat.partridge_helper import parse_time_no_seconds_column
 
 TRIP_ID_TO_DATE_TXT_NAME = 'TripIdToDate.txt'
 TARIFF_TXT_NAME = 'Tariff.txt'

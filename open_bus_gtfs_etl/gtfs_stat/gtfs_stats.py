@@ -5,12 +5,13 @@ import os
 from pathlib import Path
 from typing import Tuple, Optional
 
+import pandas
 from pandas import DataFrame
 
-from src.gtfs_stat.core_computations import get_zones_df, get_clusters_df, get_trip_id_to_date_df, compute_trip_stats, \
+from open_bus_gtfs_etl.gtfs_stat.core_computations import get_zones_df, get_clusters_df, get_trip_id_to_date_df, compute_trip_stats, \
     compute_route_stats
-from src.gtfs_stat.output import save_dataframe_to_file
-from src.gtfs_stat.partridge_helper import prepare_partridge_feed
+from open_bus_gtfs_etl.gtfs_stat.output import save_dataframe_to_file
+from open_bus_gtfs_etl.gtfs_stat.partridge_helper import prepare_partridge_feed
 
 
 def analyze_gtfs_date(date: datetime.date, gtfs_file_path: Path, tariff_file_path: Path,
@@ -28,13 +29,13 @@ def analyze_gtfs_date(date: datetime.date, gtfs_file_path: Path, tariff_file_pat
 
     trip_id_to_date_df = get_trip_id_to_date_df(trip_id_to_date_file_path, date)
 
-    ts = compute_trip_stats(feed, zones, clusters, trip_id_to_date_df, date)
-    rs = compute_route_stats(ts, date)
+    trip_stats = compute_trip_stats(feed, zones, clusters, trip_id_to_date_df, date)
+    route_stats = compute_route_stats(trip_stats, date)
 
-    return ts, rs
+    return trip_stats, route_stats
 
 
-def _dump_trip_and_route_stat(trip_stat: DataFrame, route_stat: DataFrame, output_folder: Path):
+def dump_trip_and_route_stat(trip_stat: DataFrame, route_stat: DataFrame, output_folder: Path):
     os.makedirs(output_folder, exist_ok=True)
     save_dataframe_to_file(trip_stat, output_folder.joinpath('trip_stats.csv.gz'))
     save_dataframe_to_file(route_stat, output_folder.joinpath('route_stats.csv.gz'))
@@ -43,12 +44,15 @@ def _dump_trip_and_route_stat(trip_stat: DataFrame, route_stat: DataFrame, outpu
 def create_trip_and_route_stat(date_to_analyze: datetime.date, gtfs_file_path: Path, tariff_file_path: Path,
                                cluster_to_line_file_path: Path, trip_id_to_date_file_path: Path,
                                output_folder: Optional[Path] = None) -> Tuple[DataFrame, DataFrame]:
+    """
+    trip_stat, route_stat = create_trip_and_route_stat()
+    """
 
-    ts, rs = analyze_gtfs_date(date=date_to_analyze, gtfs_file_path=gtfs_file_path, tariff_file_path=tariff_file_path,
+    trip_stats, route_stats = analyze_gtfs_date(date=date_to_analyze, gtfs_file_path=gtfs_file_path, tariff_file_path=tariff_file_path,
                                cluster_to_line_file_path=cluster_to_line_file_path,
                                trip_id_to_date_file_path=trip_id_to_date_file_path)
 
-    if output_folder is not None:
-        _dump_trip_and_route_stat(ts, rs, output_folder)
+    return trip_stats, route_stats
 
-    return ts, rs
+def read_stat_file(path: Path):
+    return pandas.read_csv(path)
