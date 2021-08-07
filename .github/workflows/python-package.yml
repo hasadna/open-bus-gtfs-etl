@@ -50,7 +50,7 @@ jobs:
     - name: Test with pytest
       run: |
         cd main
-        pytest --cov-report=xml --cov=src
+        pytest --cov-report=xml --cov=open_bus_gtfs_etl
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
