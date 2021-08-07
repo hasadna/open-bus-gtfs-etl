@@ -2,3 +2,6 @@
 
 # open-bus-gtfs-etl
 GTFS ETL for Stride.
+
+# CLI
+. ../open-bus-stride-db/.env &&  python -m open_bus_gtfs_etl.main --help

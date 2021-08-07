@@ -10,8 +10,8 @@ import gtfs_kit as gtfstk
 import pandas as pd
 import partridge as ptg
 
-from src.gtfs_stat.aggregations import generate_trip_stats_aggregation, generate_route_stats_aggregation
-from src.gtfs_stat.partridge_helper import parse_time_no_seconds_column
+from open_bus_gtfs_etl.gtfs_stat.aggregations import generate_trip_stats_aggregation, generate_route_stats_aggregation
+from open_bus_gtfs_etl.gtfs_stat.partridge_helper import parse_time_no_seconds_column
 
 TRIP_ID_TO_DATE_TXT_NAME = 'TripIdToDate.txt'
 TARIFF_TXT_NAME = 'Tariff.txt'
@@ -410,8 +410,7 @@ def compute_route_stats(trip_stats_subset: pd.DataFrame,
 
     g['date'] = date
     g['date'] = pd.Categorical(g['date'])
-    # g['source_files'] = source_files_str
 
-    logging.debug(f'Finished compute_route_stats from trip stats result')
+    logging.debug('Finished compute_route_stats from trip stats result')
 
     return g

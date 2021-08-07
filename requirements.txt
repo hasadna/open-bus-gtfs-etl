@@ -6,3 +6,6 @@ gtfs_kit
 pandas
 jsonschema
 pydantic
+pytz
+sqlalchemy
+click
