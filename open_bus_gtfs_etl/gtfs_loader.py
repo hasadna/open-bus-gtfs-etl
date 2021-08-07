@@ -1,7 +1,7 @@
 
 from datetime import datetime, timedelta, date
 
-from typing import List
+from typing import List, Optional
 
 import pytz
 from open_bus_stride_db.db import session_decorator
@@ -12,7 +12,10 @@ from tqdm import tqdm
 
 
 class RouteRecord(BaseModel):
-    date: date = None
+    """
+    RouteRecord represents a row from route stat file
+    """
+    date: Optional[date]
     route_id: int
     agency_id: int
     route_short_name: str

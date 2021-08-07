@@ -23,3 +23,7 @@ def save_dataframe_to_file(data_frame: pd.DataFrame,
         err = NotImplementedError(f'Saving dataframe as {output_file_type} is not supported')
         logging.error(err)
         raise err
+
+
+def read_stat_file(path: Path):
+    return pd.read_csv(path)

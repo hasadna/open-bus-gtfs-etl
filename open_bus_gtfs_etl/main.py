@@ -1,63 +1,82 @@
 import datetime
+import shutil
+import sys
 from pathlib import Path
+from tempfile import mkdtemp
+import logging
 
-from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFSFiles
+from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFSFiles, GTFS_METADATA_FILE
 from open_bus_gtfs_etl.gtfs_loader import load_routes_to_db
-from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, read_stat_file, dump_trip_and_route_stat
-import click
+from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, dump_trip_and_route_stat
+from open_bus_gtfs_etl.gtfs_stat.output import read_stat_file
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
-@click.command()
-@click.option('--date-to-analyze', default=None)
-@click.option('--outputs-folder', default=None)
-@click.option('--gtfs', default=None)
-@click.option('--tariff', default=None)
-@click.option('--cluster-to-line', default=None)
-@click.option('--trip-id-to-date', default=None)
-@click.option('--route-stat-file', default=None)
-def basic_command(date_to_analyze: datetime.date = None, outputs_folder: Path = None, gtfs: Path = None,
-                  tariff: Path = None, cluster_to_line: Path = None, trip_id_to_date: Path = None,
-                  route_stat_file: Path = None):
-    gtfs_files: GTFSFiles = GTFSFiles(gtfs=gtfs, tariff=tariff, cluster_to_line=cluster_to_line,
-                                      trip_id_to_date=trip_id_to_date)
-
-    main(date_to_analyze, outputs_folder, gtfs_files, route_stat_file)
+def download_gtfs_files(outputs_folder: Path) -> GTFSFiles:
+    logger.info('Downloading GTFS files into: %s', outputs_folder)
+    return GtfsRetriever(outputs_folder).retrieve_gtfs_files()
 
 
-def main(date_to_analyze: datetime.date = None, outputs_folder: Path = None, gtfs_files: GTFSFiles = None,
-         route_stat_file: Path = None):
-    """
+def write_gtfs_metadata_into_file(output: Path, gtfs: Path, tariff: Path, cluster_to_line: Path,
+                                  trip_id_to_date: Path):
+    gtfs_files = GTFSFiles(gtfs=gtfs, tariff=tariff, cluster_to_line=cluster_to_line,
+                           trip_id_to_date=trip_id_to_date)
 
-    :param outputs_folder: folder to save the outputs of the process
-    :param gtfs_files: location of the gtfs - if not provided will download files from MOT FTP
-    :param date_to_analyze: gtfs file will be filtered by that date - default is today
-    :param route_stat_file: in case route stat file is provided extract and transformation steps
-     are skipped
+    if output.is_dir():
+        output = output.joinpath(GTFS_METADATA_FILE)
 
-    :return:
-    """
+    with output.open('w') as f:
+        f.write(gtfs_files.json(indent=4))
 
-    if date_to_analyze is None:
-        date_to_analyze = datetime.datetime.now().date()
 
-    if route_stat_file is None:
+def analyze_gtfs_stat(date_to_analyze: datetime.datetime, gtfs_metadata_file: Path = None, output_folder: Path = None,
+                      gtfs_files: GTFSFiles = None):
+    if gtfs_files is None:
+        if gtfs_metadata_file.is_dir():
+            gtfs_metadata_file = gtfs_metadata_file.joinpath(GTFS_METADATA_FILE)
 
-        if gtfs_files is None:
-            gtfs_files: GTFSFiles = GtfsRetriever(outputs_folder).retrieve_gtfs_files()
+        gtfs_files = GTFSFiles.parse_file(gtfs_metadata_file)
 
-        trip_stat, route_stat = create_trip_and_route_stat(
-            date_to_analyze=date_to_analyze, gtfs_file_path=gtfs_files.gtfs,
-            tariff_file_path=gtfs_files.tariff, output_folder=outputs_folder,
-            trip_id_to_date_file_path=gtfs_files.trip_id_to_date,
-            cluster_to_line_file_path=gtfs_files.cluster_to_line)
+    logger.info('analyze gtfs stat - this could take some minutes')
+    trip_stats, route_stats = create_trip_and_route_stat(date_to_analyze.date(), gtfs_files)
 
-        if outputs_folder is not None:
-            dump_trip_and_route_stat(trip_stat, route_stat, outputs_folder)
+    if output_folder is not None:
+        dump_trip_and_route_stat(trip_stat=trip_stats, route_stat=route_stats, output_folder=output_folder)
 
-    else:
-        route_stat = read_stat_file(route_stat_file)
+    return trip_stats, route_stats
 
-    load_routes_to_db(route_stat=route_stat)
 
-if __name__ == '__main__':
-    basic_command()
+def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = None, route_stat_file: Path = None):
+
+    tmp_folder = None
+
+    try:
+        if route_stat_file is None:
+            if date_to_analyze is None:
+                date_to_analyze = datetime.datetime.today().date()
+            if gtfs_metadata_file is None:
+                tmp_folder = mkdtemp()
+                gtfs_files = download_gtfs_files(Path(tmp_folder))
+
+                _trip_stat, route_stat = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
+                                                           gtfs_files=gtfs_files)
+            else:
+                _trip_stat, route_stat = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
+                                                           gtfs_metadata_file=gtfs_metadata_file)
+
+        else:
+            route_stat = read_stat_file(path=route_stat_file)
+
+        load_routes_to_db(route_stat=route_stat)
+
+    finally:
+        if tmp_folder is not None:
+            shutil.rmtree(tmp_folder)

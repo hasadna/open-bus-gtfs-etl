@@ -7,3 +7,4 @@ open_bus_gtfs_etl/gtfs_stat/__pycache__/
 /htmlcov/
 /open_bus_gtfs_etl/__pycache__/
 tests/__pycache__/
+/.pylintrc

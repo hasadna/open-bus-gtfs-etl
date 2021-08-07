@@ -410,8 +410,7 @@ def compute_route_stats(trip_stats_subset: pd.DataFrame,
 
     g['date'] = date
     g['date'] = pd.Categorical(g['date'])
-    # g['source_files'] = source_files_str
 
-    logging.debug(f'Finished compute_route_stats from trip stats result')
+    logging.debug('Finished compute_route_stats from trip stats result')
 
     return g
