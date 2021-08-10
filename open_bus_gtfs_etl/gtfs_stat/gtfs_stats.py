@@ -20,8 +20,7 @@ ROUTE_STAT_FILE_NAME = 'route_stats.csv.gz'
 def analyze_gtfs_date(date_to_analyze: date, gtfs_file_path: Path, tariff_file_path: Path,
                       cluster_to_line_file_path: Path, trip_id_to_date_file_path: Path) -> Tuple[DataFrame, DataFrame]:
     """
-    Handles analysis of a single date for GTFS. Computes and saves stats files (currently trip_stats
-    and route_stats).
+    Aggregate GTFS data of single date into trip-stat and route stat DataFrames
     """
 
     feed = prepare_partridge_feed(date_to_analyze, gtfs_file_path)
