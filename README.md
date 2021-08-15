@@ -3,6 +3,12 @@
 # open-bus-gtfs-etl
 GTFS ETL for Stride.
 
+## Development using the Docker Compose environment
+
+This is the easiest option to start development, follow these instructions: https://github.com/hasadna/open-bus-pipelines/blob/main/README.md#gtfs-etl
+
+For local development, see the additional functionality section: `Develop gtfs-etl from a local clone`
+
 ## Development using local Python interpreter
 
 It's much easier to use the Docker Compose environment, but the following can be
