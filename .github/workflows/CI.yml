@@ -3,7 +3,7 @@ name: Python package
 on: [push, pull_request]
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
 
@@ -32,18 +32,17 @@ jobs:
         pip install -r open-bus-gtfs-etl/requirements.txt &&\
         pip install -r open-bus-gtfs-etl/tests/requirements.txt &&\
         pip install -e open-bus-gtfs-etl
-    - name: Lint with flake8
+    - name: Test and lint
       run: |
-        bin/lint.sh
-    - name: Test with pytest
-      run: |
-        cd open-bus-gtfs-etl
+        cd open-bus-gtfs-etl &&\
+        bin/lint.sh &&\
         pytest --cov-report=xml --cov=open_bus_gtfs_etl
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
         fail_ci_if_error: true
   deploy:
+    needs: test
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -77,7 +76,7 @@ jobs:
               git clone git@github.com:hasadna/open-bus-pipelines.git &&\
               cd open-bus-pipelines &&\
               echo "-r https://github.com/hasadna/open-bus-gtfs-etl/raw/${GITHUB_SHA}/requirements.txt" > requirements-gtfs-etl.txt &&\
-              echo "https://github.com/hasadna/open-bus-gtfs-etl/archive/${GITHUB_SHA}.zip" > requirements-gtfs-etl.txt &&\
+              echo "https://github.com/hasadna/open-bus-gtfs-etl/archive/${GITHUB_SHA}.zip" >> requirements-gtfs-etl.txt &&\
               git add requirements-gtfs-etl.txt &&\
               git commit -m "automatic update of gtfs etl requirements" &&\
               git push origin main
