@@ -4,7 +4,7 @@ from pathlib import Path
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFS_EXTRACTOR_CONFIG, GTFSFiles, \
     GTFS_METADATA_FILE
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, ROUTE_STAT_FILE_NAME, TRIP_STAT_FILE_NAME
-from open_bus_gtfs_etl.main import write_gtfs_metadata_into_file, analyze_gtfs_stat
+from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat
 
 
 # pylint: disable=unused-argument

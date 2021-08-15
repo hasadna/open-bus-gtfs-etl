@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Python package
 
 on: [push, pull_request]
@@ -9,17 +6,13 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.7, 3.8, 3.9]
 
     steps:
 
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        path: main
+        path: open-bus-gtfs-etl
 
     - name: Checkout tools repo
       uses: actions/checkout@v2
@@ -27,35 +20,66 @@ jobs:
         repository: hasadna/open-bus-stride-db
         path: open-bus-stride-db
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.8
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        if [ -f main/requirements.txt ]; then pip install -r main/requirements.txt; fi
-        pip install -r  open-bus-stride-db/requirements.txt
+        pip install --upgrade pip &&\
+        pip install -r open-bus-stride-db/requirements.txt &&\
+        pip install -e open-bus-stride-db &&\
+        pip install -r open-bus-gtfs-etl/requirements.txt &&\
+        pip install -r open-bus-gtfs-etl/tests/requirements.txt &&\
+        pip install -e open-bus-gtfs-etl
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Setup Stride-DB package
-      run: |
-        cd open-bus-stride-db
-        python -m pip install -e .
+        bin/lint.sh
     - name: Test with pytest
       run: |
-        cd main
+        cd open-bus-gtfs-etl
         pytest --cov-report=xml --cov=open_bus_gtfs_etl
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
         fail_ci_if_error: true
-
-
-
-
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: deploy
+        if: ${{ github.event_name == 'push' }}
+        env:
+          DOCKER_APP_IMAGE_NAME: "ghcr.io/hasadna/open-bus-gtfs-etl/open-bus-gtfs-etl"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPEN_BUS_PIPELINES_DEPLOY_KEY: ${{ secrets.OPEN_BUS_PIPELINES_DEPLOY_KEY }}
+        run: |
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u hasadna --password-stdin &&\
+          if docker pull "${DOCKER_APP_IMAGE_NAME}:latest"; then
+            CACHE_FROM_ARG="--cache-from ${DOCKER_APP_IMAGE_NAME}:latest"
+          else
+            CACHE_FROM_ARG=""
+          fi &&\
+          docker build $CACHE_FROM_ARG -t app . &&\
+          docker tag app "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" &&\
+          docker push "${DOCKER_APP_IMAGE_NAME}:${GITHUB_SHA}" &&\
+          git config --global user.name "Open Bus GTFS ETL CI" &&\
+          git config --global user.email "open-bus-gtfs-etl-ci@localhost" &&\
+          OPEN_BUS_GTFS_ETL_ROOTDIR="$(pwd)" &&\
+          if [ "${GITHUB_REF}" == "refs/heads/main" ]; then
+            docker tag app "${DOCKER_APP_IMAGE_NAME}:latest" &&\
+            docker push "${DOCKER_APP_IMAGE_NAME}:latest" &&\
+            if ! git log -1 --pretty=format:"%s" | grep -- --no-deploy; then
+              cd `mktemp -d` &&\
+              echo "${OPEN_BUS_PIPELINES_DEPLOY_KEY}" > open_bus_pipelines_deploy_key &&\
+              chmod 400 open_bus_pipelines_deploy_key &&\
+              export GIT_SSH_COMMAND="ssh -i `pwd`/open_bus_pipelines_deploy_key -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" &&\
+              git clone git@github.com:hasadna/open-bus-pipelines.git &&\
+              cd open-bus-pipelines &&\
+              echo "-r https://github.com/hasadna/open-bus-gtfs-etl/raw/${GITHUB_SHA}/requirements.txt" > requirements-gtfs-etl.txt &&\
+              echo "https://github.com/hasadna/open-bus-gtfs-etl/archive/${GITHUB_SHA}.zip" > requirements-gtfs-etl.txt &&\
+              git add requirements-gtfs-etl.txt &&\
+              git commit -m "automatic update of gtfs etl requirements" &&\
+              git push origin main
+            fi
+          fi

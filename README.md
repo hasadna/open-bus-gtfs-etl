@@ -3,5 +3,79 @@
 # open-bus-gtfs-etl
 GTFS ETL for Stride.
 
-# CLI
-. ../open-bus-stride-db/.env &&  python -m open_bus_gtfs_etl.main --help
+## Development using local Python interpreter
+
+It's much easier to use the Docker Compose environment, but the following can be
+referred to for more details regarding the internal processes and for development
+using your local Python interpreter. 
+
+### Install
+
+Create virtualenv (Python 3.8)
+
+```
+python3.8 -m venv venv
+```
+
+Upgrade pip
+
+```
+venv/bin/pip install --upgrade pip
+```
+
+You should have a clone of the following repositories in sibling directories:
+
+* `../open-bus-stride-db`: https://github.com/hasadna/open-bus-stride-db
+
+Install dev requirements (this installs above repositories as well as this repository as editable for development):
+
+```
+pip install -r requirements-dev.txt
+```
+
+Create a `.env` file and set the following in the file:
+
+The sql alchemy url should be as follows (it's only used locally):
+
+```
+export SQLALCHEMY_URL=postgresql://postgres:123456@localhost
+```
+
+### Use
+
+Use the Docker-compose environment in open-bus-pipelines to start a DB:
+
+* Follow [these instructions to start the DB](https://github.com/hasadna/open-bus-pipelines/blob/main/README.md#stride-db)
+
+Activate the virtualenv and source the .env file
+
+```
+. venv/bin/activate
+source .env
+```
+
+See the help message for available tasks:
+
+```
+open-bus-gtfs-etl --help
+```
+
+### Lint / Tests
+
+Install tests requirements
+
+```
+pip install -r tests/requirements.txt
+```
+
+Lint
+
+```
+bin/lint.sh
+```
+
+Test
+
+```
+pytest
+```
