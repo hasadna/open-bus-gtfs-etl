@@ -43,9 +43,11 @@ def create_gtfs_metadata(**kwargs):
 @click.option('--date-to-analyze', type=click.DateTime(formats=["%Y-%m-%d"]),
               default=str(datetime.date.today()))
 @click.option('--output-folder', required=True, type=click.Path(path_type=Path))
-def analyze_gtfs_stat(**kwargs):
+def analyze_gtfs_stat(gtfs_metadata_file, output_folder, **kwargs):
     "Analyze GTFS files into stat route and trips"
-    analyze_gtfs_stat(**kwargs)
+    api.analyze_gtfs_stat(gtfs_metadata_file=gtfs_metadata_file.decode() if gtfs_metadata_file else None,
+                          output_folder=output_folder.decode() if output_folder else None,
+                          **kwargs)
 
 
 @main.command()

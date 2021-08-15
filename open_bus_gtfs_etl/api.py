@@ -37,9 +37,10 @@ def write_gtfs_metadata_into_file(output: Path, gtfs: Path, tariff: Path, cluste
         f.write(gtfs_files.json(indent=4))
 
 
-def analyze_gtfs_stat(date_to_analyze: datetime.datetime, gtfs_metadata_file: Path = None, output_folder: Path = None,
+def analyze_gtfs_stat(date_to_analyze: datetime.datetime, gtfs_metadata_file: str = None, output_folder: str = None,
                       gtfs_files: GTFSFiles = None):
     if gtfs_files is None:
+        gtfs_metadata_file = Path(gtfs_metadata_file)
         if gtfs_metadata_file.is_dir():
             gtfs_metadata_file = gtfs_metadata_file.joinpath(GTFS_METADATA_FILE)
 

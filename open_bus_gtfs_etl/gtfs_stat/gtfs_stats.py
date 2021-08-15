@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from datetime import date
 import os
 from pathlib import Path
@@ -37,7 +35,8 @@ def analyze_gtfs_date(date_to_analyze: date, gtfs_file_path: Path, tariff_file_p
     return trip_stats, route_stats
 
 
-def dump_trip_and_route_stat(trip_stat: DataFrame, route_stat: DataFrame, output_folder: Path):
+def dump_trip_and_route_stat(trip_stat: DataFrame, route_stat: DataFrame, output_folder: str):
+    output_folder = Path(output_folder)
     os.makedirs(output_folder, exist_ok=True)
 
     save_dataframe_to_file(trip_stat, output_folder.joinpath(TRIP_STAT_FILE_NAME))
