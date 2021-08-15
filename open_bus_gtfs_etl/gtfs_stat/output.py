@@ -22,5 +22,6 @@ def save_dataframe_to_file(data_frame: pd.DataFrame,
 
         raise err
 
+
 def read_stat_file(path: Path):
     return pd.read_csv(path)
