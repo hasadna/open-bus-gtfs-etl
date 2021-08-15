@@ -61,3 +61,7 @@ def analyze_gtfs_stat(gtfs_metadata_file, output_folder, **kwargs):
 def upload_gtfs_stat_to_db(**kwargs):
     "Main entrypoint for GTFS ETL."
     api.main(**kwargs)
+
+
+if __name__ == '__main__':
+    main()
