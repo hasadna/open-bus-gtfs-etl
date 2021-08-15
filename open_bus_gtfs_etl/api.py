@@ -20,6 +20,18 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
+def get_archive_folder_path(archive_root_folder, date: datetime.date) -> Path:
+    return archive_root_folder.joinpath(str(date.year), str(date.month), str(date.day))
+
+
+def download_gtfs_files_into_archive_folder(archive_root_folder: Path, date: datetime.date):
+    folder = get_archive_folder_path(archive_root_folder, date)
+    download_gtfs_files(folder)
+
+
+def analyze_gtfs_stat_into_archive_folder(archive_root_folder: Path, date: datetime.date):
+    folder = get_archive_folder_path(archive_root_folder, date)
+
 def download_gtfs_files(outputs_folder: Path) -> GTFSFiles:
     logger.info('Downloading GTFS files into: %s', outputs_folder)
     return GtfsRetriever(outputs_folder).retrieve_gtfs_files()
