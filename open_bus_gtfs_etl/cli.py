@@ -59,7 +59,7 @@ def analyze_gtfs_stat(gtfs_metadata_file, output_folder, **kwargs):
 @click.option('--route-stat-file', type=click.Path(path_type=Path), default=None,
               help="path to route stat file, product of analyze-gtfs-stat")
 def upload_gtfs_stat_to_db(**kwargs):
-    "Main entrypoint for GTFS ETL."
+    """Main entrypoint for GTFS ETL."""
     api.main(**kwargs)
 
 

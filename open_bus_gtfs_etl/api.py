@@ -5,9 +5,11 @@ from pathlib import Path
 from tempfile import mkdtemp
 import logging
 
+from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFSFiles, GTFS_METADATA_FILE
 from open_bus_gtfs_etl.gtfs_loader import load_routes_to_db
-from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, dump_trip_and_route_stat
+from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, dump_trip_and_route_stat, \
+    ROUTE_STAT_FILE_NAME
 from open_bus_gtfs_etl.gtfs_stat.output import read_stat_file
 
 logger = logging.getLogger()
@@ -20,17 +22,38 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def get_archive_folder_path(archive_root_folder, date: datetime.date) -> Path:
-    return archive_root_folder.joinpath(str(date.year), str(date.month), str(date.day))
+class UserError(Exception):
+    pass
 
 
-def download_gtfs_files_into_archive_folder(archive_root_folder: Path, date: datetime.date):
-    folder = get_archive_folder_path(archive_root_folder, date)
-    download_gtfs_files(folder)
+def download_gtfs_files_into_archive_folder(date: datetime.date):
+    archive_folder = Archives.gtfs.get_dated_path(date)
+    logger.info("Downloading GTFS files to archive folder: %s", archive_folder)
+    download_gtfs_files(outputs_folder=Archives.gtfs.get_dated_path(date))
 
 
-def analyze_gtfs_stat_into_archive_folder(archive_root_folder: Path, date: datetime.date):
-    folder = get_archive_folder_path(archive_root_folder, date)
+def analyze_gtfs_stat_into_archive_folder(date: datetime.date):
+    gtfs_metadata = Archives.gtfs.get_dated_path(date, GTFS_METADATA_FILE)
+    if not gtfs_metadata.is_file():
+        raise UserError(f"Can't find relevant gtfs files for {date.isoformat()}. "
+                        f"Please check that you downloaded GTFS files")
+
+    output_folder = Archives.stat.get_dated_path(date)
+
+    logger.info("analyzing GTFS files from archive folder: %s and save analyzed data in %s",
+                gtfs_metadata, output_folder)
+
+    analyze_gtfs_stat(date_to_analyze=date, gtfs_metadata_file=gtfs_metadata,
+                      output_folder=output_folder)
+
+
+def load_analyzed_gtfs_stat_from_archive_folder(date: datetime.date):
+    route_stat_file = Archives.stat.get_dated_path(date, ROUTE_STAT_FILE_NAME)
+    if not route_stat_file.is_file():
+        raise UserError(f"Can't find relevant route stat file at {route_stat_file}. "
+                        f"Please check that you analyze gtfs files first.")
+    main(route_stat_file=route_stat_file)
+
 
 def download_gtfs_files(outputs_folder: Path) -> GTFSFiles:
     logger.info('Downloading GTFS files into: %s', outputs_folder)
@@ -49,17 +72,16 @@ def write_gtfs_metadata_into_file(output: Path, gtfs: Path, tariff: Path, cluste
         f.write(gtfs_files.json(indent=4))
 
 
-def analyze_gtfs_stat(date_to_analyze: datetime.datetime, gtfs_metadata_file: str = None, output_folder: str = None,
+def analyze_gtfs_stat(date_to_analyze: datetime.date, gtfs_metadata_file: Path = None, output_folder: Path = None,
                       gtfs_files: GTFSFiles = None):
     if gtfs_files is None:
-        gtfs_metadata_file = Path(gtfs_metadata_file)
         if gtfs_metadata_file.is_dir():
             gtfs_metadata_file = gtfs_metadata_file.joinpath(GTFS_METADATA_FILE)
 
         gtfs_files = GTFSFiles.parse_file(gtfs_metadata_file)
 
     logger.info('analyze gtfs stat - this could take some minutes')
-    trip_stats, route_stats = create_trip_and_route_stat(date_to_analyze.date(), gtfs_files)
+    trip_stats, route_stats = create_trip_and_route_stat(date_to_analyze, gtfs_files)
 
     if output_folder is not None:
         dump_trip_and_route_stat(trip_stat=trip_stats, route_stat=route_stats, output_folder=output_folder)
