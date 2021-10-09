@@ -85,3 +85,48 @@ Test
 ```
 pytest
 ```
+
+### Supported Operations and Configurations
+#### Environment variables
+- **gtfs_etl_root_archives_folder** - the local folder that will contain a sub folder "gtfs_archive" 
+  for downloaded gtfs files from MOT and "stat_archive" for analyzed files that could be uploaded to db.
+  the default path if nothing will be ./.data
+  ```
+  export gtfs_etl_root_archives_folder=./mydata
+  ```
+- **SQLALCHEMY_URL** - connection url for the database. for example: 
+  ```
+  export SQLALCHEMY_URL=postgresql://postgres:123456@localhost
+  ```
+  
+### Supported Operations 
+- **Download the daily gtfs data** and store in a directory structure (e.g. gtfs_data/YEAR/MONTH/DAY)
+  for example:
+  ```commandline
+  python cli.py download-gtfs-into-archive
+  ```
+
+- **Analyzing the daily gtfs data** and store in a directory structure (e.g. stat_data/YEAR/MONTH/DAY)
+  this operation has optional parameter **--date-to-analyze** that get date (format: %Y-%m-%d). 
+  This param by default uses machine current date. For example:
+  ```commandline
+  python cli.py analyze-gtfs-into-archive
+  
+  python cli.py analyze-gtfs-into-archive --date-to-analyze 2020-5-5
+  ```
+  in case there is no GTFS data for that date, and error will be raised:  
+  `Can't find relevant gtfs files for 2020-05-05 in .data/gtfs_archive/2020/5/5/.gtfs_metadata.json. Please check that 
+  you downloaded GTFS files`
+  
+- **Load analyzed data into database** this operation has optional parameter **--date-to-analyze** that get date 
+  (format: %Y-%m-%d). This param by default uses machine current date. For example:
+  ```commandline
+  python cli.py upload-analyze-gtfs-from-archive
+  
+  python cli.py upload-analyze-gtfs-from-archive --date-to-upload 2020-5-5
+  ```
+  in case there is no analyzed GTFS data for that date, and error will be raised: 
+  `Can't find relevant route stat file at .data/stat_archive/2020/5/5/route_stats.csv.gz. 
+  Please check that you analyze gtfs files first.`
+  in case there is no database as configured in SQLALCHEMY_URL env. parameter the following error will raise:
+  `could not connect to server: Connection refused`

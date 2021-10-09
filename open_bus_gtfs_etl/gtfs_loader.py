@@ -81,11 +81,10 @@ def duplicate_route_for_same_date(session: Session, route_from_gtfs):
     same_date: datetime.date = route_from_gtfs.max_date
     route_from_db_from_same_date = session.query(Route). \
         filter(Route.min_date <= same_date,
-               route_from_gtfs.max_date <= same_date,
+               same_date <= Route.max_date,
                Route.line_ref == route_from_gtfs.line_ref,
                Route.operator_ref == route_from_gtfs.operator_ref,
                Route.is_from_gtfs == route_from_gtfs.is_from_gtfs).one_or_none()
-
     return route_from_db_from_same_date is not None
 
 
