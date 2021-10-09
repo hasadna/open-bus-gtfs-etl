@@ -1,0 +1,6 @@
+{
+    "gtfs": "tests/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip",
+    "tariff": "tests/resources/gtfs_extract_assets/2019-03-07-Tariff.zip",
+    "cluster_to_line": "tests/resources/gtfs_extract_assets/2019-03-07-ClusterToLine.zip",
+    "trip_id_to_date": "tests/resources/gtfs_extract_assets/2019-03-07-TripIdToDate.zip"
+}

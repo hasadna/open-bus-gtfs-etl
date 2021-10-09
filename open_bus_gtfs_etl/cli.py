@@ -5,6 +5,8 @@ from textwrap import dedent
 import click
 
 from open_bus_gtfs_etl import api
+from open_bus_gtfs_etl.api import download_gtfs_files_into_archive_folder, analyze_gtfs_stat_into_archive_folder, \
+    load_analyzed_gtfs_stat_from_archive_folder
 
 
 @click.group()
@@ -61,6 +63,25 @@ def analyze_gtfs_stat(gtfs_metadata_file, output_folder, **kwargs):
 def upload_gtfs_stat_to_db(**kwargs):
     """Main entrypoint for GTFS ETL."""
     api.main(**kwargs)
+
+
+@main.command()
+def download_gtfs_into_archive():
+    download_gtfs_files_into_archive_folder()
+
+
+@main.command()
+@click.option('--date-to-analyze', type=click.DateTime(formats=["%Y-%m-%d"]),
+              default=str(datetime.date.today()), help="Date to create filtered stat analysis if not provided")
+def analyze_gtfs_into_archive(date_to_analyze: datetime.datetime):
+    analyze_gtfs_stat_into_archive_folder(date_to_analyze.date())
+
+
+@main.command()
+@click.option('--date-to-upload', type=click.DateTime(formats=["%Y-%m-%d"]),
+              default=str(datetime.date.today()), help="Date to create filtered stat analysis if not provided")
+def upload_analyze_gtfs_from_archive(date_to_upload: datetime.datetime):
+    load_analyzed_gtfs_stat_from_archive_folder(date_to_upload.date())
 
 
 if __name__ == '__main__':

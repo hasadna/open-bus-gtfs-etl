@@ -6,7 +6,8 @@ from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFS_EXTRACTOR_CONFIG, GTFSFiles, \
     GTFS_METADATA_FILE
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, ROUTE_STAT_FILE_NAME, TRIP_STAT_FILE_NAME
-from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat
+from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat, \
+    analyze_gtfs_stat_into_archive_folder
 
 
 # pylint: disable=unused-argument
@@ -73,12 +74,23 @@ class TestMain:
         # Assert
         assert GTFSFiles.parse_file(output)
 
+    def test_analyze_gtfs_stat_into_archive_folder(self):
+
+
+
+        analyze_gtfs_stat_into_archive_folder(datetime.date(2019, 3, 7), Archives(Path(__file__).parent.joinpath('resources/example_archive_folder')))
+
+
+        """"
+        resources/example_archive_folder/gtfs_archive/2019/3/7/.gtfs_metadata.json
+        resources/example_archive_folder/gtfs_archive/2019/3/7/.gtfs_metadata.json
+        """
+
     def test_analyze_gtfs_stat(self, tmp_path):
 
         trip_stats, route_stats = analyze_gtfs_stat(date_to_analyze=datetime.date(2019, 3, 7),
                                                     output_folder=tmp_path,
-                                                    gtfs_metadata_file=Path('tests/resources/gtfs_extract_assets/'
-                                                                            '.gtfs_metadata.json'))
+                                                    gtfs_metadata_file=Path('tests/resources/gtfs_extract_assets/.gtfs_metadata.json'))
 
         assert tmp_path.joinpath(ROUTE_STAT_FILE_NAME).is_file()
         assert tmp_path.joinpath(TRIP_STAT_FILE_NAME).is_file()
@@ -119,11 +131,22 @@ class TestGtgsStat:
 
 class TestArchives:
     def test_get_dated_path(self):
-        actual = Archives.gtfs.get_dated_path(datetime.date(2000, 10, 20))
-        expected = Archives.gtfs.root_folder.joinpath('2000', '10', '20')
+        path = Path('tests/resources/example_archive_folder')
+        actual = Archives(path).gtfs.get_dated_path(datetime.date(2000, 10, 20))
+        expected = Archives(path).gtfs.root_folder.joinpath('2000', '10', '20')
         assert expected == actual
 
     def test_get_dated_path_with_file(self):
-        actual = Archives.gtfs.get_dated_path(datetime.date(2000, 10, 20), 'filename')
-        expected = Archives.gtfs.root_folder.joinpath('2000', '10', '20', 'filename')
+        path = Path('tests/resources/example_archive_folder')
+        actual = Archives(path).gtfs.get_dated_path(datetime.date(2000, 10, 20), 'filename')
+        expected = Archives(path).gtfs.root_folder.joinpath('2000', '10', '20', 'filename')
         assert expected == actual
+
+
+
+
+"""
+/home/aviv/tmp/open-bus-gtfs-etl/tests/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip
+/home/aviv/tmp/open-bus-gtfs-etl/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip
+
+"""

@@ -1,3 +1,4 @@
+import os
 import shutil
 from contextlib import closing
 from pathlib import Path
@@ -48,6 +49,8 @@ class GtfsRetriever:
         self.app_config = app_config
 
     def retrieve_gtfs_files(self) -> GTFSFiles:
+        os.makedirs(self.folder, exist_ok=True)
+
         args: Dict[str, FileConfig] = dict(gtfs=self.app_config.gtfs_file,
                                            tariff=self.app_config.tariff_file,
                                            cluster_to_line=self.app_config.cluster_file,

@@ -1,19 +1,8 @@
 import datetime
 from pathlib import Path
-from pydantic import BaseSettings
 
 GTFS_ARCHIVE_FOLDER = "gtfs_archive"
 STAT_ARCHIVE_FOLDER = "stat_archive"
-
-
-class ArchiveSettings(BaseSettings):
-    root_archives_folder: Path = Path(".data")
-
-    class Config:
-        env_prefix = 'gtfs_etl_'
-
-
-archive_settings = ArchiveSettings()
 
 
 class Archive:
@@ -25,5 +14,7 @@ class Archive:
 
 
 class Archives:
-    gtfs = Archive(root_folder=archive_settings.root_archives_folder.joinpath(GTFS_ARCHIVE_FOLDER))
-    stat = Archive(root_folder=archive_settings.root_archives_folder.joinpath(STAT_ARCHIVE_FOLDER))
+    def __init__(self, root_archives_folder: Path):
+
+        self.gtfs = Archive(root_folder=root_archives_folder.joinpath(GTFS_ARCHIVE_FOLDER))
+        self.stat = Archive(root_folder=root_archives_folder.joinpath(STAT_ARCHIVE_FOLDER))
