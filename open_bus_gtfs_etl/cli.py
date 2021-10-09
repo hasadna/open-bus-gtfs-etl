@@ -14,10 +14,15 @@ def main():
     pass
 
 
-@main.command()
+@main.group()
+def others():
+    pass
+
+
+@others.command()
 @click.argument('outputs_folder')
 def download_gtfs(**kwargs):
-    "Download GTFS file from MOT FTP server"
+    """Download GTFS file from MOT FTP server"""
     files = api.download_gtfs_files(**kwargs)
     print(dedent(f"""
         gtfs: "{files.gtfs}"
@@ -27,18 +32,18 @@ def download_gtfs(**kwargs):
     """))
 
 
-@main.command()
+@others.command()
 @click.option('--output', required=True, type=click.Path(path_type=Path))
 @click.option('--gtfs', required=True, type=click.Path(path_type=Path, file_okay=True))
 @click.option('--tariff', 'tariff', required=True, type=click.Path(path_type=Path, file_okay=True))
 @click.option('--cluster-to-line', 'cluster_to_line', required=True, type=click.Path(path_type=Path, file_okay=True))
 @click.option('--trip-id-to-date', 'trip_id_to_date', required=True, type=click.Path(path_type=Path, file_okay=True))
 def create_gtfs_metadata(**kwargs):
-    "Create metadata file of existed GTFS files"
+    """Create metadata file of existed GTFS files"""
     api.write_gtfs_metadata_into_file(**kwargs)
 
 
-@main.command('analyze-gtfs-stat', help="Analyze GTFS files into stat route and trips")
+@others.command('analyze-gtfs-stat', help="Analyze GTFS files into stat route and trips")
 @click.option('--gtfs-metadata-file', type=click.Path(path_type=Path),
               help=f'in case a folder is provided, will look for the '
                    f'default metadata file name: {api.GTFS_METADATA_FILE}', required=True)
@@ -46,13 +51,13 @@ def create_gtfs_metadata(**kwargs):
               default=str(datetime.date.today()))
 @click.option('--output-folder', required=True, type=click.Path(path_type=Path))
 def analyze_gtfs_stat(gtfs_metadata_file, output_folder, **kwargs):
-    "Analyze GTFS files into stat route and trips"
+    """Analyze GTFS files into stat route and trips"""
     api.analyze_gtfs_stat(gtfs_metadata_file=gtfs_metadata_file.decode() if gtfs_metadata_file else None,
                           output_folder=output_folder.decode() if output_folder else None,
                           **kwargs)
 
 
-@main.command()
+@others.command()
 @click.option('--gtfs-metadata-file', type=click.Path(path_type=Path),
               help=f'in case a folder is provided, will look for the '
                    f'default metadata file name: {api.GTFS_METADATA_FILE}')
