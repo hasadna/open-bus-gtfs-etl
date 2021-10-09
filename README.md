@@ -91,8 +91,12 @@ pytest
 - **gtfs_etl_root_archives_folder** - the local folder that will contain a sub folder "gtfs_archive" 
   for downloaded gtfs files from MOT and "stat_archive" for analyzed files that could be uploaded to db.
   the default path if nothing will be ./.data
-  ```commandline
+  ```
   export gtfs_etl_root_archives_folder=./mydata
+  ```
+- **SQLALCHEMY_URL** - connection url for the database. for example: 
+  ```
+  export SQLALCHEMY_URL=postgresql://postgres:123456@localhost
   ```
   
 ### Supported Operations 
@@ -106,7 +110,7 @@ pytest
   this operation has optional parameter **--date-to-analyze** that get date (format: %Y-%m-%d). 
   This param by default uses machine current date. For example:
   ```commandline
-  python cli.py analyze-gtfs-into-archive --date-to-analyze
+  python cli.py analyze-gtfs-into-archive
   
   python cli.py analyze-gtfs-into-archive --date-to-analyze 2020-5-5
   ```
