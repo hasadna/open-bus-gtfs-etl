@@ -46,8 +46,8 @@ def download_gtfs_files_into_archive_folder(archives: Archives = _archives):
 
 
 def analyze_gtfs_stat_into_archive_folder(date: str, archives: Archives = _archives):
-    gtfs_metadata = archives.gtfs.get_dated_path(date, GTFS_METADATA_FILE)
     date = parse_date_str(date)
+    gtfs_metadata = archives.gtfs.get_dated_path(date, GTFS_METADATA_FILE)
     if not gtfs_metadata.is_file():
         raise UserError(f"Can't find relevant gtfs files for {date.isoformat()} in {gtfs_metadata}. "
                         f"Please check that you downloaded GTFS files")
