@@ -5,14 +5,13 @@ from pathlib import Path
 from tempfile import mkdtemp
 import logging
 
-from pydantic import BaseSettings
-
 from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFSFiles, GTFS_METADATA_FILE
 from open_bus_gtfs_etl.gtfs_loader import load_routes_to_db
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, dump_trip_and_route_stat, \
     ROUTE_STAT_FILE_NAME
 from open_bus_gtfs_etl.gtfs_stat.output import read_stat_file
+from . import config
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -28,15 +27,7 @@ class UserError(Exception):
     pass
 
 
-class GtfsEtlArchiveSettings(BaseSettings):
-    root_archives_folder: Path = Path(".data")
-
-    class Config:
-        env_prefix = 'gtfs_etl_'
-
-
-app_settings = GtfsEtlArchiveSettings()
-_archives = Archives(root_archives_folder=app_settings.root_archives_folder)
+_archives = Archives(root_archives_folder=config.GTFS_ETL_ROOT_ARCHIVES_FOLDER)
 
 
 def download_gtfs_files_into_archive_folder(archives: Archives = _archives):
@@ -129,3 +120,10 @@ def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = N
     finally:
         if tmp_folder is not None:
             shutil.rmtree(tmp_folder)
+
+
+def cleanup_dated_paths(num_days_keep, num_weeklies_keep):
+    print('gtfs cleanup')
+    _archives.gtfs.cleanup_dated_path(num_days_keep, num_weeklies_keep)
+    print('stat cleanup')
+    _archives.stat.cleanup_dated_path(num_days_keep, num_weeklies_keep)

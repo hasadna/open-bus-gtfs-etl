@@ -11,3 +11,4 @@ tests/__pycache__/
 /*.egg-info
 .env
 /tests/resources/example_archive_folder/stat_archive
+.data
