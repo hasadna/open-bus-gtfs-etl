@@ -2,6 +2,8 @@ import datetime
 import os
 from pathlib import Path
 
+import pytest
+
 from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFS_EXTRACTOR_CONFIG, GTFSFiles, \
     GTFS_METADATA_FILE
@@ -74,6 +76,7 @@ class TestMain:
         # Assert
         assert GTFSFiles.parse_file(output)
 
+    @pytest.mark.skip('missing test data to run this test')
     def test_analyze_gtfs_stat_into_archive_folder(self):
 
 
@@ -82,8 +85,8 @@ class TestMain:
 
 
         """"
-        resources/example_archive_folder/gtfs_archive/2019/3/7/.gtfs_metadata.json
-        resources/example_archive_folder/gtfs_archive/2019/3/7/.gtfs_metadata.json
+        resources/example_archive_folder/gtfs_archive/2019/03/07/.gtfs_metadata.json
+        resources/example_archive_folder/gtfs_archive/2019/03/07/.gtfs_metadata.json
         """
 
     def test_analyze_gtfs_stat(self, tmp_path):
