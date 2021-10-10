@@ -30,6 +30,14 @@ class UserError(Exception):
 _archives = Archives(root_archives_folder=config.GTFS_ETL_ROOT_ARCHIVES_FOLDER)
 
 
+def parse_date_str(date):
+    """Parses a date string in format %Y-%m-%d with default of today if empty"""
+    if not date:
+        return datetime.date.today()
+    else:
+        return datetime.datetime.strptime(date, '%Y-%m-%d').date()
+
+
 def download_gtfs_files_into_archive_folder(archives: Archives = _archives):
     date: datetime.date = datetime.date.today()
     archive_folder = archives.gtfs.get_dated_path(date)
@@ -37,8 +45,9 @@ def download_gtfs_files_into_archive_folder(archives: Archives = _archives):
     download_gtfs_files(outputs_folder=archives.gtfs.get_dated_path(date))
 
 
-def analyze_gtfs_stat_into_archive_folder(date: datetime.date, archives: Archives = _archives):
+def analyze_gtfs_stat_into_archive_folder(date: str, archives: Archives = _archives):
     gtfs_metadata = archives.gtfs.get_dated_path(date, GTFS_METADATA_FILE)
+    date = parse_date_str(date)
     if not gtfs_metadata.is_file():
         raise UserError(f"Can't find relevant gtfs files for {date.isoformat()} in {gtfs_metadata}. "
                         f"Please check that you downloaded GTFS files")
@@ -52,7 +61,8 @@ def analyze_gtfs_stat_into_archive_folder(date: datetime.date, archives: Archive
                       output_folder=output_folder)
 
 
-def load_analyzed_gtfs_stat_from_archive_folder(date: datetime.date, archives: Archives = _archives):
+def load_analyzed_gtfs_stat_from_archive_folder(date: str, archives: Archives = _archives):
+    date = parse_date_str(date)
     route_stat_file = archives.stat.get_dated_path(date, ROUTE_STAT_FILE_NAME)
     if not route_stat_file.is_file():
         raise UserError(f"Can't find relevant route stat file at {route_stat_file}. "
