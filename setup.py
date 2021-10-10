@@ -13,6 +13,7 @@ setup(
     name='open-bus-gtfs-etl',
     version=version,
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
+    include_package_data=True,
     entry_points={
         'console_scripts': [
             'open-bus-gtfs-etl = open_bus_gtfs_etl.cli:main',
