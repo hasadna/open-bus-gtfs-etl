@@ -33,4 +33,6 @@
         type: cli
         module: open_bus_gtfs_etl.cli
         function: cleanup_dated_paths
-
+        kwargs:
+          num_days_keep: {default: 10}
+          num_weeklies_keep: {default: 10}
