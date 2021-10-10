@@ -17,7 +17,7 @@ def download():
 
 
 @main.command()
-@click.option('--date-to-analyze', type=str,
+@click.option('--date', type=str,
               help="Date string (%Y-%m-%d) to create filtered stat analysis. "
                    "If not provided uses current date")
 def analyze(**kwargs):
@@ -26,7 +26,7 @@ def analyze(**kwargs):
 
 
 @main.command()
-@click.option('--date-to-upload', type=str,
+@click.option('--date', type=str,
               help="Date string (%Y-%m-%d) to create filtered stat analysis. "
                    "if not provided uses current date")
 def load_to_db(**kwargs):

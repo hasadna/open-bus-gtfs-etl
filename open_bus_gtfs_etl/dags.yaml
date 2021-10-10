@@ -15,6 +15,8 @@
         type: cli
         module: open_bus_gtfs_etl.cli
         function: analyze
+        kwargs:
+          date: {}
     - id: load-to-db
       depends_on:
         - analyze
@@ -22,6 +24,8 @@
         type: cli
         module: open_bus_gtfs_etl.cli
         function: load_to_db
+        kwargs:
+          date: {}
     - id: cleanup-dated-paths
       depends_on:
         - analyze
