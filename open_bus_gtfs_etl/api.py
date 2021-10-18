@@ -1,3 +1,4 @@
+import os
 import datetime
 import shutil
 import sys
@@ -12,6 +13,7 @@ from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, d
     ROUTE_STAT_FILE_NAME
 from open_bus_gtfs_etl.gtfs_stat.output import read_stat_file
 from . import config
+from .common import http_stream_download
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -32,7 +34,9 @@ _archives = Archives(root_archives_folder=config.GTFS_ETL_ROOT_ARCHIVES_FOLDER)
 
 def parse_date_str(date):
     """Parses a date string in format %Y-%m-%d with default of today if empty"""
-    if not date:
+    if isinstance(date, datetime.date):
+        return date
+    elif not date:
         return datetime.date.today()
     else:
         return datetime.datetime.strptime(date, '%Y-%m-%d').date()
@@ -137,3 +141,23 @@ def cleanup_dated_paths(num_days_keep, num_weeklies_keep):
     _archives.gtfs.cleanup_dated_path(num_days_keep, num_weeklies_keep)
     print('stat cleanup')
     _archives.stat.cleanup_dated_path(num_days_keep, num_weeklies_keep)
+
+
+def download_gtfs_files_from_stride(date):
+    date = parse_date_str(date)
+    assert date, 'must provide date'
+    base_url = 'https://open-bus-gtfs-data.hasadna.org.il/gtfs_archive/{}/'.format(date.strftime('%Y/%m/%d'))
+    base_path = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'gtfs_archive', date.strftime('%Y/%m/%d'))
+    print("Downloading GTFS files from {} to {}".format(base_url, base_path))
+    for filename in ['ClusterToLine.zip', 'Tariff.zip', 'TripIdToDate.zip', 'israel-public-transportation.zip']:
+        url = base_url + filename
+        path = os.path.join(base_path, filename)
+        http_stream_download(path, url=url)
+    base_url = 'https://open-bus-gtfs-data.hasadna.org.il/stat_archive/{}/'.format(date.strftime('%Y/%m/%d'))
+    base_path = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'stat_archive', date.strftime('%Y/%m/%d'))
+    print("Downloading GTFS files from {} to {}".format(base_url, base_path))
+    for filename in ['route_stats.csv.gz', 'trip_stats.csv.gz']:
+        url = base_url + filename
+        path = os.path.join(base_path, filename)
+        http_stream_download(path, url=url)
+
