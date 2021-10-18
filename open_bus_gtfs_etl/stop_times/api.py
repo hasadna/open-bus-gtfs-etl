@@ -51,39 +51,72 @@ def list_(date, limit):
                     break
 
 
+class ObjectsMaker:
+
+    def __init__(self, stats, session, date):
+        self._stats = stats
+        self._session = session
+        self._date = date
+        self._rides_cache = {}
+        self._rides_index = []
+        self._stops_cache = {}
+
+    def get_ride(self, trip_id):
+        if trip_id not in self._rides_cache:
+            if len(self._rides_index) > 1000:
+                del self._rides_cache[self._rides_index.pop(0)]
+            self._rides_index.append(trip_id)
+            rides = self._session.query(model.Ride).filter(model.Ride.journey_ref == trip_id,
+                                                           model.Ride.is_from_gtfs == True).order_by(model.Ride.scheduled_start_time).all()
+            if len(rides) == 0:
+                self._stats['no rides for trip_id'] += 1
+                self._rides_cache[trip_id] = False
+            else:
+                if len(rides) > 1:
+                    self._stats['too many rides for trip_id'] += 1
+                self._rides_cache[trip_id] = rides[0]
+        return self._rides_cache[trip_id]
+
+    def get_stop(self, stop_id):
+        if stop_id not in self._stops_cache:
+            stops = self._session.query(model.Stop).filter(model.Stop.code == stop_id,
+                                                           model.Stop.is_from_gtfs == True,
+                                                           model.Stop.min_date <= self._date,
+                                                           self._date <= model.Stop.max_date).order_by(model.Stop.id).all()
+            if len(stops) == 0:
+                self._stats['no stops for stop_id'] += 1
+                self._stops_cache[stop_id] = False
+            else:
+                if len(stops) > 1:
+                    self._stats['too many stops for stop_id'] += 1
+                self._stops_cache[stop_id] = stops[0]
+        return self._stops_cache[stop_id]
+
+
 @session_decorator
-def load_to_db(session: Session, date, limit):
+def load_to_db(session: Session, date, limit, no_count):
     stats = defaultdict(int)
     date = parse_date_str(date)
+    if no_count:
+        count = 9999999999
+        print("Skipping counting of stop_times")
+    else:
+        print("Counting stop_times...")
+        count = 0
+        for _ in list_(date, limit):
+            count += 1
+        print("{} stop_times to process".format(count))
+    objects_maker = ObjectsMaker(stats, session, date)
+    start_time = datetime.datetime.now()
     for i, stop_time in enumerate(list_(date, limit)):
         if i % 10000 == 9999:
+            print('{}s: {} / {} ({}%)'.format((datetime.datetime.now() - start_time).total_seconds(), i, count, i / count * 100))
             print(dict(stats))
         try:
-            rides = session.query(model.Ride).filter(model.Ride.journey_ref == stop_time['trip_id'],
-                                                     model.Ride.is_from_gtfs == True).order_by(model.Ride.scheduled_start_time).all()
-            if len(rides) == 0:
-                stats['stop_time has no rides for trip'] += 1
-                # print("WARNING! No rides for trip_id {}".format(stop_time['trip_id']))
+            ride = objects_maker.get_ride(stop_time['trip_id'])
+            stop = objects_maker.get_stop(stop_time['stop_id'])
+            if not ride or not stop:
                 continue
-            elif len(rides) > 1:
-                stats['stop_time has too many rides for trip'] += 1
-                ride = rides[0]
-            else:
-                ride = rides[0]
-            stops = session.query(model.Stop).filter(model.Stop.code == stop_time['stop_id'],
-                                                     model.Stop.is_from_gtfs == True,
-                                                     model.Stop.min_date <= date,
-                                                     date <= model.Stop.max_date).order_by(model.Stop.id).all()
-            if len(stops) == 0:
-                stats['stop_time has no stops for stop_id'] += 1
-                # print("WARNING! No stops for stop_id {}".format(stop_time['stop_id']))
-                continue
-            elif len(stops) > 1:
-                stats['stop_time has too many stops for stop_id'] += 1
-                # print("WARNING! Found {} stops for stop_id {}, using first one".format(len(stops), stop_time['stop_id']))
-                stop = stops[0]
-            else:
-                stop = stops[0]
             ride_stop = session.query(model.RideStop).filter(model.RideStop.ride == ride,
                                                              model.RideStop.stop == stop,
                                                              model.RideStop.is_from_gtfs == True).one_or_none()

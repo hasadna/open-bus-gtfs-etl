@@ -30,6 +30,7 @@ def list_(**kwargs):
                    "if not provided uses current date")
 @click.option('--limit', default=0, help='limit of maximum number of items to process. '
                                          'will process all items by default, set this for debugging.')
+@click.option('--no-count', is_flag=True, help='skip counting of all stop times before processing')
 def load_to_db(**kwargs):
     stats: dict = api.load_to_db(**kwargs)
     for k, v in stats.items():
