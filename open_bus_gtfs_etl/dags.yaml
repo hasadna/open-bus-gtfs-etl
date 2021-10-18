@@ -38,6 +38,7 @@
         kwargs:
           date: {}
           limit: {}
+          no_count: {}
     - id: cleanup-dated-paths
       depends_on:
         - analyze
