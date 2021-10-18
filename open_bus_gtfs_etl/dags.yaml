@@ -8,6 +8,8 @@
         type: cli
         module: open_bus_gtfs_etl.cli
         function: download
+        kwargs:
+          date: {}
     - id: analyze
       depends_on:
         - download
