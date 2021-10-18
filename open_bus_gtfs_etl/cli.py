@@ -1,8 +1,7 @@
-import datetime
-
 import click
 
 from open_bus_gtfs_etl import api
+from .stop_times import cli as stop_times_cli
 
 
 @click.group()
@@ -10,10 +9,19 @@ def main():
     pass
 
 
+main.add_command(stop_times_cli.stop_times)
+
+
 @main.command()
-def download():
+@click.option('--date', type=str,
+              help="Date string (%Y-%m-%d). If provided will attempt to download old data from stride project. "
+                   "If not provided will download latest data for current date from MOT.")
+def download(date):
     """Downloads the daily gtfs data and store in a directory structure: gtfs_data/YEAR/MONTH/DAY"""
-    api.download_gtfs_files_into_archive_folder()
+    if date:
+        api.download_gtfs_files_from_stride(date)
+    else:
+        api.download_gtfs_files_into_archive_folder()
 
 
 @main.command()

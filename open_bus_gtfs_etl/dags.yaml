@@ -26,6 +26,16 @@
         function: load_to_db
         kwargs:
           date: {}
+    - id: stop-times-load-to-db
+      depends_on:
+        - load-to-db
+      config:
+        type: cli
+        module: open_bus_gtfs_etl.stop_times.cli
+        function: load_to_db
+        kwargs:
+          date: {}
+          limit: {}
     - id: cleanup-dated-paths
       depends_on:
         - analyze
