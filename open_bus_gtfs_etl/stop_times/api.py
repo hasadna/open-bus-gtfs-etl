@@ -85,7 +85,8 @@ def load_to_db(session: Session, date, limit):
             else:
                 stop = stops[0]
             ride_stop = session.query(model.RideStop).filter(model.RideStop.ride == ride,
-                                                             model.RideStop.stop == stop).one_or_none()
+                                                             model.RideStop.stop == stop,
+                                                             model.RideStop.is_from_gtfs == True).one_or_none()
             if not ride_stop:
                 stats['created new ride_stop'] +=1
                 session.add(model.RideStop(
