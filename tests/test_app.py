@@ -144,12 +144,3 @@ class TestArchives:
         actual = Archives(path).gtfs.get_dated_path(datetime.date(2000, 10, 20), 'filename')
         expected = Archives(path).gtfs.root_folder.joinpath('2000', '10', '20', 'filename')
         assert expected == actual
-
-
-
-
-"""
-/home/aviv/tmp/open-bus-gtfs-etl/tests/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip
-/home/aviv/tmp/open-bus-gtfs-etl/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip
-
-"""

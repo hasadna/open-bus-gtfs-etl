@@ -48,3 +48,7 @@ def load_to_db(**kwargs):
 def cleanup_dated_paths(**kwargs):
     """Delete old directories from the dated paths"""
     api.cleanup_dated_paths(**kwargs)
+
+
+if __name__ == '__main__':
+    main()

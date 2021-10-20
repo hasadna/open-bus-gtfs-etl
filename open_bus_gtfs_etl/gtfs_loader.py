@@ -1,7 +1,7 @@
 
 from datetime import datetime, timedelta, date
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import pytz
 from open_bus_stride_db.db import session_decorator
@@ -38,7 +38,8 @@ class RouteRecord(BaseModel):
     def from_row(cls, row):
         return cls(**dict(row.iteritems()))
 
-    def convert_into_db_route(self) -> Route:
+    def convert_into_db_route(self, stops: Dict[int, Stop]) -> Route:
+
         return Route(min_date=self.date, max_date=self.date, line_ref=self.route_id,
                      operator_ref=self.agency_id, gtfs_route_short_name=self.route_short_name,
                      gtfs_route_long_name=self.route_long_name, gtfs_route_mkt=self.route_mkt,
@@ -46,7 +47,7 @@ class RouteRecord(BaseModel):
                      gtfs_route_alternative=self.route_alternative,
                      gtfs_agency_name=self.agency_name,
                      gtfs_route_type=self.route_type, is_from_gtfs=True,
-                     rides=self._get_rides(), route_stops=self._get_stops())
+                     rides=self._get_rides(), route_stops=self._get_stops(stops))
 
     def _get_rides(self) -> List[Ride]:
 
@@ -57,18 +58,38 @@ class RouteRecord(BaseModel):
                        self.all_trip_id.split(";"),
                        self.all_trip_id_to_date.split(";"))]
 
-    def _get_stops(self) -> List[RouteStop]:
+    def _upsert_stop(self, stops, stop_code, stop_latlon, stop_name, stop_desc_city) -> Stop:
+        lat, lon = stop_latlon.split(",")
+
+        stop = stops.get(int(stop_code))
+
+        if stop is None or stop.lat != float(lat) or stop.lon != float(lon) \
+                or stop.name != stop_name or stop.city != stop_desc_city:
+
+            stop = Stop(min_date=self.date, max_date=self.date, code=stop_code,
+                        lat=lat, lon=lon, name=stop_name, city=stop_desc_city,
+                        is_from_gtfs=True)
+            stops[int(stop_code)] = stop
+
+        else:
+            stop.max_date = self.date
+
+        return stop
+
+
+    def _get_stops(self, stops: Dict[int, Stop]) -> List[RouteStop]:
         res = []
 
         for ind, (stop_code, _stop_id, stop_name, stop_desc_city, stop_latlon) \
                 in enumerate(zip(self.all_stop_code.split(";"), self.all_stop_id.split(";"),
                                  self.all_stop_name.split(";"), self.all_stop_desc_city.split(";"),
                                  self.all_stop_latlon.split(";")), start=1):
-            lat, lon = stop_latlon.split(",")
+
+            stop = self._upsert_stop(stops=stops, stop_code=stop_code, stop_latlon=stop_latlon,
+                                     stop_name=stop_name, stop_desc_city=stop_desc_city)
+
             res.append(RouteStop(is_from_gtfs=True, order=ind,
-                                 stop=Stop(min_date=self.date, max_date=self.date, code=stop_code,
-                                           lat=lat, lon=lon, name=stop_name, city=stop_desc_city,
-                                           is_from_gtfs=True)))
+                                 stop=stop))
         return res
 
     def _parse_timestr(self, time_str: str):
@@ -111,10 +132,15 @@ def same_route_exist_yesterday_adjust_dates(session: Session, route_from_gtfs):
     return True
 
 
+def _get_valid_stops_for_date(session: Session, date_to_analyze: date):
+    stops = session.query(Stop).filter(Stop.max_date <= date_to_analyze).order_by(Stop.max_date).all()
+    return {stop.code: stop for stop in stops}
+
 @session_decorator
-def load_routes_to_db(session: Session, route_stat):
+def load_routes_to_db(session: Session, route_stat, date_to_analyze: date):
+    stops: Dict[int, Stop] = _get_valid_stops_for_date(session, date_to_analyze)
     for _, route in tqdm(route_stat.iterrows()):
-        route_from_gtfs = RouteRecord.from_row(route).convert_into_db_route()
+        route_from_gtfs = RouteRecord.from_row(route).convert_into_db_route(stops=stops)
 
         if not same_route_exist_yesterday_adjust_dates(session, route_from_gtfs) \
                 and not duplicate_route_for_same_date(session, route_from_gtfs):

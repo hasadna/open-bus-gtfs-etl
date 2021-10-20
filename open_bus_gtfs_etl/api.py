@@ -113,9 +113,11 @@ def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = N
     tmp_folder = None
 
     try:
+        if date_to_analyze is None:
+            date_to_analyze = datetime.datetime.today().date()
+
         if route_stat_file is None:
-            if date_to_analyze is None:
-                date_to_analyze = datetime.datetime.today().date()
+
             if gtfs_metadata_file is None:
                 tmp_folder = mkdtemp()
                 gtfs_files = download_gtfs_files(Path(tmp_folder))
@@ -129,7 +131,7 @@ def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = N
         else:
             route_stat = read_stat_file(path=route_stat_file)
 
-        load_routes_to_db(route_stat=route_stat)
+        load_routes_to_db(route_stat=route_stat, date_to_analyze=date_to_analyze)
 
     finally:
         if tmp_folder is not None:
