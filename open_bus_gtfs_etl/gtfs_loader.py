@@ -47,7 +47,7 @@ class RouteRecord(BaseModel):
                      gtfs_route_alternative=self.route_alternative,
                      gtfs_agency_name=self.agency_name,
                      gtfs_route_type=self.route_type, is_from_gtfs=True,
-                     rides=self._get_rides(), route_stops=self._get_stops(stops))
+                     rides=self._get_rides(), route_stops=self._get_route_stops(stops))
 
     def _get_rides(self) -> List[Ride]:
 
@@ -58,7 +58,19 @@ class RouteRecord(BaseModel):
                        self.all_trip_id.split(";"),
                        self.all_trip_id_to_date.split(";"))]
 
-    def _upsert_stop(self, stops, stop_code, stop_latlon, stop_name, stop_desc_city) -> Stop:
+    def _upsert_stops(self, stops: Dict[int, Stop], stop_code, stop_latlon, stop_name, stop_desc_city) -> Stop:
+        """
+        Upsert (Update or Insert) Stops. Based on given dict of stops that represent the current up to date stops,
+        this method validate that new Stop will be created just in case its not already exist (with the same details)
+        Args:
+            stops: a dict the represent the current up to date stops
+            stop_code: stop code that identify the stop
+            stop_latlon: lat & lon of a stop
+            stop_name: name of the stop
+            stop_desc_city: stop's city
+
+        Returns: Stop
+        """
         lat, lon = stop_latlon.split(",")
 
         stop = stops.get(int(stop_code))
@@ -76,8 +88,15 @@ class RouteRecord(BaseModel):
 
         return stop
 
+    def _get_route_stops(self, stops: Dict[int, Stop]) -> List[RouteStop]:
+        """
+        creates route stops items based on the route stat information.
+        Args:
+            stops: existing Stops
 
-    def _get_stops(self, stops: Dict[int, Stop]) -> List[RouteStop]:
+        Returns: list of RouteStops
+
+        """
         res = []
 
         for ind, (stop_code, _stop_id, stop_name, stop_desc_city, stop_latlon) \
@@ -85,8 +104,8 @@ class RouteRecord(BaseModel):
                                  self.all_stop_name.split(";"), self.all_stop_desc_city.split(";"),
                                  self.all_stop_latlon.split(";")), start=1):
 
-            stop = self._upsert_stop(stops=stops, stop_code=stop_code, stop_latlon=stop_latlon,
-                                     stop_name=stop_name, stop_desc_city=stop_desc_city)
+            stop = self._upsert_stops(stops=stops, stop_code=stop_code, stop_latlon=stop_latlon,
+                                      stop_name=stop_name, stop_desc_city=stop_desc_city)
 
             res.append(RouteStop(is_from_gtfs=True, order=ind,
                                  stop=stop))
@@ -135,6 +154,7 @@ def same_route_exist_yesterday_adjust_dates(session: Session, route_from_gtfs):
 def _get_valid_stops_for_date(session: Session, date_to_analyze: date):
     stops = session.query(Stop).filter(Stop.max_date <= date_to_analyze).order_by(Stop.max_date).all()
     return {stop.code: stop for stop in stops}
+
 
 @session_decorator
 def load_routes_to_db(session: Session, route_stat, date_to_analyze: date):
