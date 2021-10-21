@@ -1,15 +1,25 @@
 import os
 import shutil
+import time
 from contextlib import closing
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from urllib import request
+from urllib.error import URLError
 
 from pydantic import BaseModel
 from tqdm import tqdm
 
+from logging import getLogger
+
 GTFS_METADATA_FILE = '.gtfs_metadata.json'
 __CONFIGURATION_FILE_NAME = "gtfs_extractor.config"
+
+logger = getLogger(__file__)
+
+
+class DownloadingException(Exception):
+    pass
 
 
 class FileConfig(BaseModel):
@@ -24,10 +34,11 @@ class GtfsExtractorConfig(BaseModel):
     tariff_file: FileConfig
     cluster_file: FileConfig
     trip_id_to_date_file: FileConfig
+    download_retries_delay: List[int]
 
 
-GTFS_EXTRACTOR_CONFIG = GtfsExtractorConfig.parse_file(Path(__file__)
-                                                       .parent.joinpath(__CONFIGURATION_FILE_NAME))
+GTFS_EXTRACTOR_CONFIG: GtfsExtractorConfig = GtfsExtractorConfig.parse_file(Path(__file__)
+                                                                            .parent.joinpath(__CONFIGURATION_FILE_NAME))
 
 
 class GTFSFiles(BaseModel):
@@ -58,13 +69,23 @@ class GtfsRetriever:
 
         gtfs_files = GTFSFiles(**{k: Path(self.folder, v.local_name) for k, v in args.items()})
 
-        for item in tqdm(args.values()):
-            self.download_file_from_ftp(url=item.url, local_file=Path(self.folder, item.local_name))
+        for i, delay_in_sec in enumerate(self.app_config.download_retries_delay, start=1):
+            try:
+                for item in tqdm(args.values()):
+                    self.download_file_from_ftp(url=item.url, local_file=Path(self.folder, item.local_name))
 
-        with open(Path(self.folder, GTFS_METADATA_FILE), 'w') as metadata_file:
-            metadata_file.write(gtfs_files.json())
+                with open(Path(self.folder, GTFS_METADATA_FILE), 'w') as metadata_file:
+                    metadata_file.write(gtfs_files.json())
 
-        return gtfs_files
+                return gtfs_files
+
+            except URLError as e:
+                logger.exception(f"Failed to Download GTFS Files. {i} tryout of "
+                                 f"{len(self.app_config.download_retries_delay)} tryouts. Going to wait {delay_in_sec} "
+                                 f"sec before the next try. error: {str(e)}")
+                time.sleep(delay_in_sec)
+
+        raise DownloadingException('Failed to Download GTFS Files.')
 
     @staticmethod
     def download_file_from_ftp(url, local_file: Path):
