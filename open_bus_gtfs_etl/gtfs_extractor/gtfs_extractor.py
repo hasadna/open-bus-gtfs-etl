@@ -69,7 +69,10 @@ class GtfsRetriever:
 
         gtfs_files = GTFSFiles(**{k: Path(self.folder, v.local_name) for k, v in args.items()})
 
-        for i, delay_in_sec in enumerate(self.app_config.download_retries_delay, start=1):
+        tries = self.app_config.download_retries_delay.copy()
+        tries.append(0)
+
+        for i, delay_in_sec in enumerate(tries, start=1):
             try:
                 for item in tqdm(args.values()):
                     self.download_file_from_ftp(url=item.url, local_file=Path(self.folder, item.local_name))

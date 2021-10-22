@@ -47,7 +47,7 @@ class TestGtfsExtractor:
         # Arrange
         gtfs_extractor_config: GtfsExtractorConfig = GTFS_EXTRACTOR_CONFIG.copy()
         gtfs_extractor_config.download_retries_delay = [0, 0, 0, 0]
-        number_of_retries = len(gtfs_extractor_config.download_retries_delay)
+        number_of_retries = len(gtfs_extractor_config.download_retries_delay) + 1
 
         retriever = GtfsRetriever(tmp_path, app_config=gtfs_extractor_config)
         retriever.download_file_from_ftp = Mock(side_effect=URLError("irrelevant error - not suppose to retry"))
