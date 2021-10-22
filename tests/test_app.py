@@ -1,15 +1,17 @@
 import datetime
 import os
 from pathlib import Path
+from unittest.mock import Mock
+from urllib.error import URLError
 
 import pytest
 
 from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFS_EXTRACTOR_CONFIG, GTFSFiles, \
-    GTFS_METADATA_FILE
+    GTFS_METADATA_FILE, GtfsExtractorConfig, DownloadingException
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, ROUTE_STAT_FILE_NAME, TRIP_STAT_FILE_NAME
 from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat, \
-    analyze_gtfs_stat_into_archive_folder
+    analyze_gtfs_stat_into_archive_folder, download_gtfs_files_into_archive_folder
 
 
 # pylint: disable=unused-argument
@@ -19,6 +21,44 @@ def fake_download_file_from_ftp(url, local_file: Path):
 
 
 class TestGtfsExtractor:
+
+    def test_retrieve_gtfs_files_with_irrelevant_error_wont_cause_retry(self, tmp_path: Path):
+        """
+        Test that in case other error than URLError raise the app wont retry to download GTFS Files.
+        """
+        # Arrange
+        class FooException(Exception):
+            pass
+
+        retriever = GtfsRetriever(tmp_path)
+        retriever.download_file_from_ftp = Mock(side_effect=FooException("irrelevant error - not suppose to retry"))
+
+        # Act
+        with pytest.raises(FooException):
+            retriever.retrieve_gtfs_files()
+
+        # Assert
+        retriever.download_file_from_ftp.assert_called_once()
+
+    def test_retrieve_gtfs_files_with_relevant_error_cause_retry(self, tmp_path: Path):
+        """
+        Test that in case URLError raise while trying to download GTFS Files - will cause to retry downloading files
+        """
+        # Arrange
+        gtfs_extractor_config: GtfsExtractorConfig = GTFS_EXTRACTOR_CONFIG.copy()
+        gtfs_extractor_config.download_retries_delay = [0, 0, 0, 0]
+        number_of_retries = len(gtfs_extractor_config.download_retries_delay) + 1
+
+        retriever = GtfsRetriever(tmp_path, app_config=gtfs_extractor_config)
+        retriever.download_file_from_ftp = Mock(side_effect=URLError("irrelevant error - not suppose to retry"))
+
+        # Act
+        with pytest.raises(DownloadingException):
+            retriever.retrieve_gtfs_files()
+
+        # Assert
+        assert retriever.download_file_from_ftp.call_count == number_of_retries
+
     def test_init(self):
         # Arrange
         folder = Path('foo')
