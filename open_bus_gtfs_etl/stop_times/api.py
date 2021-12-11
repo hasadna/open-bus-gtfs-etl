@@ -9,14 +9,8 @@ from open_bus_stride_db.db import session_decorator, Session
 from open_bus_stride_db import model
 
 
-def parse_datetime(trip_id, timestr):
-    datestr = trip_id.split('_')[1]
-    date = datetime.datetime.strptime(datestr, '%d%m%y').date()
-    hours, minutes, seconds = list(map(int, timestr.split(':')))
-    if hours > 23:
-        date += datetime.timedelta(days=1)
-        hours = hours - 24
-    return datetime.datetime.combine(date, datetime.time(hours, minutes, seconds))
+def parse_time(timestr):
+    return list(map(int, timestr.split(':')))
 
 
 def list_(date, limit):
@@ -39,9 +33,9 @@ def list_(date, limit):
                         row['stop_sequence'] = int(row['stop_sequence'])
                         row['pickup_type'] = int(row['pickup_type'])
                         row['drop_off_type'] = int(row['drop_off_type'])
-                        row['shape_dist_traveled'] = int(row['shape_dist_traveled'])
-                        row['arrival_datetime'] = parse_datetime(row['trip_id'], row.pop('arrival_time'))
-                        row['departure_datetime'] = parse_datetime(row['trip_id'], row.pop('departure_time'))
+                        row['shape_dist_traveled'] = int(row['shape_dist_traveled']) if row['shape_dist_traveled'] else 0
+                        row['arrival_time'] = parse_time(row.pop('arrival_time'))
+                        row['departure_time'] = parse_time(row.pop('departure_time'))
                     except:
                         print("Failed to parse line: {}".format(line))
                         raise
@@ -125,8 +119,8 @@ def load_to_db(session: Session, date, limit, no_count):
                 session.add(model.RideStop(
                     ride=ride, stop=stop,
                     is_from_gtfs=True,
-                    gtfs_arrival_datetime=stop_time['arrival_datetime'],
-                    gtfs_departure_datetime=stop_time['departure_datetime'],
+                    gtfs_arrival_time='{}:{}:{}'.format(*stop_time['arrival_time']),
+                    gtfs_departure_time='{}:{}:{}'.format(*stop_time['departure_time']),
                     gtfs_stop_sequence=stop_time['stop_sequence'],
                     gtfs_pickup_type=stop_time['pickup_type'],
                     gtfs_drop_off_type=stop_time['drop_off_type'],
@@ -134,8 +128,8 @@ def load_to_db(session: Session, date, limit, no_count):
                 ))
             else:
                 stats['updated existing ride_stop'] += 1
-                ride_stop.gtfs_arrival_datetime = stop_time['arrival_datetime']
-                ride_stop.gtfs_departure_datetime = stop_time['departure_datetime']
+                ride_stop.gtfs_arrival_time = '{}:{}:{}'.format(*stop_time['arrival_time'])
+                ride_stop.gtfs_departure_time = '{}:{}:{}'.format(*stop_time['departure_time'])
                 ride_stop.gtfs_stop_sequence = stop_time['stop_sequence']
                 ride_stop.gtfs_pickup_type = stop_time['pickup_type']
                 ride_stop.gtfs_drop_off_type = stop_time['drop_off_type']

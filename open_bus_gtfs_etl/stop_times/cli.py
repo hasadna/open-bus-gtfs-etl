@@ -17,11 +17,7 @@ def stop_times():
 @click.option('--limit', default=10, help='maximum number of items to list, set to 0 to disable the limit')
 def list_(**kwargs):
     for stop_time in api.list_(**kwargs):
-        print(json.dumps({
-            **stop_time,
-            'arrival_datetime': stop_time['arrival_datetime'].strftime('%d/%m/%Y %H:%M:%S'),
-            'departure_datetime': stop_time['departure_datetime'].strftime('%d/%m/%Y %H:%M:%S'),
-        }))
+        print(json.dumps(stop_time))
 
 
 @stop_times.command()

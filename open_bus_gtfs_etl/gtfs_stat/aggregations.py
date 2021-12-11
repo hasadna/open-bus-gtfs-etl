@@ -53,11 +53,10 @@ def generate_trip_stats_aggregation(feed):
 
         d['all_stop_latlon'] = ';'.join(str(x) + ',' + str(y) for x, y in
                                         zip(group['stop_lat'].tolist(), group['stop_lon'].tolist()))
-        try:
-            for key in keys_for_all:
-                d[f'all_{key}'] = ';'.join([str(i) for i in group[key].tolist()])
-        except TypeError as e:
-            print(e)
+
+        for key in keys_for_all:
+            d[f'all_{key}'] = ';'.join([str(i) for i in group[key].tolist()])
+
         return pd.Series(d)
 
     return trip_stats_aggregation
