@@ -125,8 +125,15 @@ def _upsert_stop(stops: Dict[int, Stop], stop_to_upsert: StopModel) -> Stop:
         if stop_to_upsert.stop_date > res_stop.max_date:
             res_stop.max_date = stop_to_upsert.stop_date
 
+    # in case stop exist with same values we should update the existing stop
+    elif exist_stop is not None and exist_stop.max_date == stop_to_upsert.stop_date \
+            and exist_stop.min_date == stop_to_upsert.stop_date:
+        _update_exist_stop_by_stop_to_upsert(exist_stop, stop_to_upsert)
+        res_stop = exist_stop
+
     # in case stop is not exist, or it is different - create new one
     else:
+
         res_stop = Stop(min_date=stop_to_upsert.stop_date, max_date=stop_to_upsert.stop_date,
                         code=stop_to_upsert.stop_code, lat=stop_to_upsert.stop_lat, lon=stop_to_upsert.stop_lon,
                         name=stop_to_upsert.stop_name, city=stop_to_upsert.stop_desc_city, is_from_gtfs=True)
@@ -142,6 +149,12 @@ def _is_exist_stop_eql_to_stop_to_upsert(existing_stop, stop_to_upsert: StopMode
     return existing_stop.lat == stop_to_upsert.stop_lat and existing_stop.lon == stop_to_upsert.stop_lon \
            and existing_stop.name == stop_to_upsert.stop_name and existing_stop.city == stop_to_upsert.stop_desc_city
 
+
+def _update_exist_stop_by_stop_to_upsert(existing_stop, stop_to_upsert: StopModel):
+    existing_stop.lat = stop_to_upsert.stop_lat
+    existing_stop.lon = stop_to_upsert.stop_lon
+    existing_stop.name = stop_to_upsert.stop_name
+    existing_stop.city = stop_to_upsert.stop_desc_city
 
 def duplicate_route_for_same_date(session: Session, route_from_gtfs):
     same_date: datetime.date = route_from_gtfs.max_date
@@ -191,7 +204,7 @@ def _get_valid_stops_for_date(session: Session, date_to_analyze: date):
 def load_routes_to_db(session: Session, route_stat, date_to_analyze: date):
     stops: Dict[int, Stop] = _get_valid_stops_for_date(session, date_to_analyze)
     for _, route in tqdm(route_stat.iterrows()):
-        route_from_gtfs = RouteRecord.from_row(route).convert_into_db_route(stops=stops)
+        route_from_gtfs: Route = RouteRecord.from_row(route).convert_into_db_route(stops=stops)
 
         if not same_route_exist_yesterday_adjust_dates(session, route_from_gtfs) \
                 and not duplicate_route_for_same_date(session, route_from_gtfs):

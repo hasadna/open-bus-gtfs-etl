@@ -230,3 +230,23 @@ class TestUpsertStop:
 
         assert actual == exist_stop_a_week_ago
         assert exist_stop_a_week_ago.max_date == today
+
+    def test_upsert_stop_if_exist_stop_for_same_dates_update_existing_without_creating_new(self):
+        today = datetime.date(2020, 10, 15)
+        a_week_ago = today - datetime.timedelta(days=7)
+
+        exist_stop_for_today = Stop(min_date=today, max_date=today, code=555, lat=1, lon=1,
+                                    name="", city="", is_from_gtfs=True)
+
+        stop_to_upsert = StopModel(stop_code=555, stop_lat=15.7, stop_lon=13.4, stop_name="aba-hillel",
+                                   stop_desc_city="ramat-gan", stop_date=today)
+
+        actual = _upsert_stop({exist_stop_for_today.code: exist_stop_for_today}, stop_to_upsert)
+
+        assert actual == exist_stop_for_today
+        assert actual.max_date == today
+        assert actual.min_date == today
+        assert actual.lat == stop_to_upsert.stop_lat
+        assert actual.lon == stop_to_upsert.stop_lon
+        assert actual.name == stop_to_upsert.stop_name
+        assert actual.city == stop_to_upsert.stop_desc_city
