@@ -125,7 +125,7 @@ def _upsert_stop(stops: Dict[int, Stop], stop_to_upsert: StopModel) -> Stop:
         if stop_to_upsert.stop_date > res_stop.max_date:
             res_stop.max_date = stop_to_upsert.stop_date
 
-    # in case stop exist with same values we should update the existing stop
+    # in case stop exist with same dated we should update the existing stop
     elif exist_stop is not None and exist_stop.max_date == stop_to_upsert.stop_date \
             and exist_stop.min_date == stop_to_upsert.stop_date:
         _update_exist_stop_by_stop_to_upsert(exist_stop, stop_to_upsert)
