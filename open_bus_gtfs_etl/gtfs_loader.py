@@ -11,6 +11,23 @@ from sqlalchemy.orm import Session
 from tqdm import tqdm
 
 
+class StopModel(BaseModel):
+    stop_code: int
+    stop_lat: float
+    stop_lon: float
+    stop_name: str
+    stop_desc_city: str
+    stop_date: date
+
+    @classmethod
+    def parse(cls, stop_code: str, stop_name: str, stop_desc_city: str, stop_lat_lon: str, stop_date: date) \
+            -> "StopModel":
+
+        lat, lon = stop_lat_lon.split(",")
+        return cls(stop_code=int(stop_code), stop_name=stop_name, stop_desc_city=stop_desc_city,
+                   stop_lat=lat, stop_lon=lon, stop_date=stop_date)
+
+
 class RouteRecord(BaseModel):
     """
     RouteRecord represents a row from route stat file
@@ -32,7 +49,7 @@ class RouteRecord(BaseModel):
     all_stop_id: str
     all_stop_name: str
     all_stop_desc_city: str
-    all_stop_latlon: str
+    all_stop_lat_lon: str
 
     @classmethod
     def from_row(cls, row):
@@ -58,36 +75,6 @@ class RouteRecord(BaseModel):
                        self.all_trip_id.split(";"),
                        self.all_trip_id_to_date.split(";"))]
 
-    def _upsert_stops(self, stops: Dict[int, Stop], stop_code, stop_latlon, stop_name, stop_desc_city) -> Stop:
-        """
-        Upsert (Update or Insert) Stops. Based on given dict of stops that represent the current up to date stops,
-        this method validate that new Stop will be created just in case its not already exist (with the same details)
-        Args:
-            stops: a dict the represent the current up to date stops
-            stop_code: stop code that identify the stop
-            stop_latlon: lat & lon of a stop
-            stop_name: name of the stop
-            stop_desc_city: stop's city
-
-        Returns: Stop
-        """
-        lat, lon = stop_latlon.split(",")
-
-        stop = stops.get(int(stop_code))
-
-        if stop is None or stop.lat != float(lat) or stop.lon != float(lon) \
-                or stop.name != stop_name or stop.city != stop_desc_city:
-
-            stop = Stop(min_date=self.date, max_date=self.date, code=stop_code,
-                        lat=lat, lon=lon, name=stop_name, city=stop_desc_city,
-                        is_from_gtfs=True)
-            stops[int(stop_code)] = stop
-
-        else:
-            stop.max_date = self.date
-
-        return stop
-
     def _get_route_stops(self, stops: Dict[int, Stop]) -> List[RouteStop]:
         """
         creates route stops items based on the route stat information.
@@ -99,14 +86,12 @@ class RouteRecord(BaseModel):
         """
         res = []
 
-        for ind, (stop_code, _stop_id, stop_name, stop_desc_city, stop_latlon) \
-                in enumerate(zip(self.all_stop_code.split(";"), self.all_stop_id.split(";"),
-                                 self.all_stop_name.split(";"), self.all_stop_desc_city.split(";"),
-                                 self.all_stop_latlon.split(";")), start=1):
+        for ind, (stop_code, stop_name, stop_desc_city, stop_lat_lon) \
+                in enumerate(zip(self.all_stop_code.split(";"), self.all_stop_name.split(";"),
+                                 self.all_stop_desc_city.split(";"), self.all_stop_lat_lon.split(";")), start=1):
 
-            stop = self._upsert_stops(stops=stops, stop_code=stop_code, stop_latlon=stop_latlon,
-                                      stop_name=stop_name, stop_desc_city=stop_desc_city)
-
+            stop_to_upsert = StopModel.parse(stop_code, stop_name, stop_desc_city, stop_lat_lon, self.date)
+            stop = _upsert_stop(stops=stops, stop_to_upsert=stop_to_upsert)
             res.append(RouteStop(is_from_gtfs=True, order=ind,
                                  stop=stop))
         return res
@@ -115,6 +100,47 @@ class RouteRecord(BaseModel):
         return datetime.combine(self.date,
                                 datetime.strptime(time_str, '%H:%M:%S').time(),
                                 tzinfo=pytz.UTC)
+
+
+def _upsert_stop(stops: Dict[int, Stop], stop_to_upsert: StopModel) -> Stop:
+    """
+    Upsert (Update or Insert) Stops. Based on given dict of stops that represent the current up-to-date stops,
+    this method validate that new Stop will be created just in case it's not already exist (with the same details)
+    and that the existed stop will be modified as needed
+    Args:
+        stops: a dict that represent the current up-to-date stops
+        stop_to_upsert: obj that represent the stop details for upsert
+
+    Returns: Stop
+    """
+
+    exist_stop = stops.get(stop_to_upsert.stop_code)
+    res_stop: Stop
+
+    # in case stop exist with same values we should return that stop
+    if exist_stop is not None and _is_exist_stop_eql_to_stop_to_upsert(exist_stop, stop_to_upsert):
+        res_stop = exist_stop
+
+        # in case the stop is in the past, change max date to include current date
+        if stop_to_upsert.stop_date > res_stop.max_date:
+            res_stop.max_date = stop_to_upsert.stop_date
+
+    # in case stop is not exist, or it is different - create new one
+    else:
+        res_stop = Stop(min_date=stop_to_upsert.stop_date, max_date=stop_to_upsert.stop_date,
+                        code=stop_to_upsert.stop_code, lat=stop_to_upsert.stop_lat, lon=stop_to_upsert.stop_lon,
+                        name=stop_to_upsert.stop_name, city=stop_to_upsert.stop_desc_city, is_from_gtfs=True)
+
+        # if it already exists - change the date of the existing stop to yesterday
+        if exist_stop is not None:
+            exist_stop.max_date = stop_to_upsert.stop_date - timedelta(days=1)
+
+    return res_stop
+
+
+def _is_exist_stop_eql_to_stop_to_upsert(existing_stop, stop_to_upsert: StopModel):
+    return existing_stop.lat == stop_to_upsert.stop_lat and existing_stop.lon == stop_to_upsert.stop_lon \
+           and existing_stop.name == stop_to_upsert.stop_name and existing_stop.city == stop_to_upsert.stop_desc_city
 
 
 def duplicate_route_for_same_date(session: Session, route_from_gtfs):
@@ -152,7 +178,12 @@ def same_route_exist_yesterday_adjust_dates(session: Session, route_from_gtfs):
 
 
 def _get_valid_stops_for_date(session: Session, date_to_analyze: date):
-    stops = session.query(Stop).filter(Stop.max_date <= date_to_analyze).order_by(Stop.max_date).all()
+    """
+    get last relevant stop version for given date.
+    """
+    stops = session.query(Stop).filter(Stop.min_date <= date_to_analyze).order_by(Stop.max_date).all()
+    # looping over ordered stops and inserting them into dict by stop code will promise that each stop code will have
+    # the last relevant version of stop.
     return {stop.code: stop for stop in stops}
 
 

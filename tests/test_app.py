@@ -1,14 +1,17 @@
 import datetime
 import os
 from pathlib import Path
+from typing import Dict
 from unittest.mock import Mock
 from urllib.error import URLError
 
 import pytest
+from open_bus_stride_db.model import Stop
 
 from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFS_EXTRACTOR_CONFIG, GTFSFiles, \
     GTFS_METADATA_FILE, GtfsExtractorConfig, DownloadingException
+from open_bus_gtfs_etl.gtfs_loader import _upsert_stop, StopModel
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, ROUTE_STAT_FILE_NAME, TRIP_STAT_FILE_NAME
 from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat, \
     analyze_gtfs_stat_into_archive_folder, download_gtfs_files_into_archive_folder
@@ -184,3 +187,46 @@ class TestArchives:
         actual = Archives(path).gtfs.get_dated_path(datetime.date(2000, 10, 20), 'filename')
         expected = Archives(path).gtfs.root_folder.joinpath('2000', '10', '20', 'filename')
         assert expected == actual
+
+
+class TestUpsertStop:
+    def test_upsert_stop_if_not_exist_stop_create_new_one(self):
+        today = datetime.date(2020, 10, 15)
+
+        stop_to_upsert = StopModel(stop_code=555, stop_lat=15.7, stop_lon=13.4, stop_name="aba-hillel",
+                                   stop_desc_city="ramat-gan", stop_date=today)
+
+        actual = _upsert_stop({}, stop_to_upsert)
+
+        assert actual.max_date == today and actual.min_date == today
+
+    def test_upsert_stop_if_exist_stop_but_different_create_new_and_update_existing(self):
+        today = datetime.date(2020, 10, 15)
+        a_week_ago = today - datetime.timedelta(days=7)
+        yesterday = today - datetime.timedelta(days=1)
+
+        exist_stop_a_week_ago = Stop(min_date=a_week_ago, max_date=a_week_ago, code=555, lat=99, lon=99,
+                                     name="", city="", is_from_gtfs=True)
+
+        stop_to_upsert = StopModel(stop_code=555, stop_lat=15.7, stop_lon=13.4, stop_name="aba-hillel",
+                                   stop_desc_city="ramat-gan", stop_date=today)
+
+        actual = _upsert_stop({exist_stop_a_week_ago.code: exist_stop_a_week_ago}, stop_to_upsert)
+
+        assert actual.max_date == today and actual.min_date == today
+        assert exist_stop_a_week_ago.max_date == yesterday
+
+    def test_upsert_stop_if_exist_stop_and_same_update_existing(self):
+        today = datetime.date(2020, 10, 15)
+        a_week_ago = today - datetime.timedelta(days=7)
+
+        exist_stop_a_week_ago = Stop(min_date=a_week_ago, max_date=a_week_ago, code=555, lat=15.7, lon=13.4,
+                                     name="aba-hillel", city="ramat-gan", is_from_gtfs=True)
+
+        stop_to_upsert = StopModel(stop_code=555, stop_lat=15.7, stop_lon=13.4, stop_name="aba-hillel",
+                                   stop_desc_city="ramat-gan", stop_date=today)
+
+        actual = _upsert_stop({exist_stop_a_week_ago.code: exist_stop_a_week_ago}, stop_to_upsert)
+
+        assert actual == exist_stop_a_week_ago
+        assert exist_stop_a_week_ago.max_date == today
