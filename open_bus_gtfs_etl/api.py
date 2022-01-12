@@ -8,12 +8,11 @@ import logging
 
 from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFSFiles, GTFS_METADATA_FILE
-from open_bus_gtfs_etl.gtfs_loader import load_routes_to_db
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, dump_trip_and_route_stat, \
     ROUTE_STAT_FILE_NAME
-from open_bus_gtfs_etl.gtfs_stat.output import read_stat_file
 from . import config
 from .common import http_stream_download
+from .gtfs_loader import Loader
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -26,7 +25,9 @@ logger.addHandler(handler)
 
 
 class UserError(Exception):
-    pass
+    """
+    Exception that represent error caused by wrong input of user
+    """
 
 
 _archives = Archives(root_archives_folder=config.GTFS_ETL_ROOT_ARCHIVES_FOLDER)
@@ -38,8 +39,7 @@ def parse_date_str(date):
         return date
     elif not date:
         return datetime.date.today()
-    else:
-        return datetime.datetime.strptime(date, '%Y-%m-%d').date()
+    return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
 
 def download_gtfs_files_into_archive_folder(archives: Archives = _archives):
@@ -93,6 +93,7 @@ def write_gtfs_metadata_into_file(output: Path, gtfs: Path, tariff: Path, cluste
 
 def analyze_gtfs_stat(date_to_analyze: datetime.date, gtfs_metadata_file: Path = None, output_folder: Path = None,
                       gtfs_files: GTFSFiles = None):
+    routs_stat_path = None
     if gtfs_files is None:
         if gtfs_metadata_file.is_dir():
             gtfs_metadata_file = gtfs_metadata_file.joinpath(GTFS_METADATA_FILE)
@@ -103,9 +104,10 @@ def analyze_gtfs_stat(date_to_analyze: datetime.date, gtfs_metadata_file: Path =
     trip_stats, route_stats = create_trip_and_route_stat(date_to_analyze, gtfs_files)
 
     if output_folder is not None:
-        dump_trip_and_route_stat(trip_stat=trip_stats, route_stat=route_stats, output_folder=output_folder)
+        routs_stat_path = dump_trip_and_route_stat(trip_stat=trip_stats, route_stat=route_stats,
+                                                   output_folder=output_folder)
 
-    return trip_stats, route_stats
+    return trip_stats, route_stats, routs_stat_path
 
 
 def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = None, route_stat_file: Path = None):
@@ -122,16 +124,13 @@ def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = N
                 tmp_folder = mkdtemp()
                 gtfs_files = download_gtfs_files(Path(tmp_folder))
 
-                _trip_stat, route_stat = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
+                _trip_stat, route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
                                                            gtfs_files=gtfs_files)
             else:
-                _trip_stat, route_stat = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
+                _trip_stat, route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
                                                            gtfs_metadata_file=gtfs_metadata_file)
 
-        else:
-            route_stat = read_stat_file(path=route_stat_file)
-
-        load_routes_to_db(route_stat=route_stat, date_to_analyze=date_to_analyze)
+        Loader(route_stat_file).upsert_routes()
 
     finally:
         if tmp_folder is not None:
@@ -162,4 +161,3 @@ def download_gtfs_files_from_stride(date):
         url = base_url + filename
         path = os.path.join(base_path, filename)
         http_stream_download(path, url=url)
-
