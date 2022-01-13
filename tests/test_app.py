@@ -28,7 +28,8 @@ def fake_download_file_from_ftp(url, local_file: Path):
 
 class TestGtfsExtractor:
 
-    def test_retrieve_gtfs_files_with_irrelevant_error_wont_cause_retry(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files_with_irrelevant_error_wont_cause_retry(tmp_path: Path):
         """
         Test that in case other error than URLError raise the app wont retry to download GTFS Files.
         """
@@ -46,7 +47,8 @@ class TestGtfsExtractor:
         # Assert
         retriever.download_file_from_ftp.assert_called_once()
 
-    def test_retrieve_gtfs_files_with_relevant_error_cause_retry(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files_with_relevant_error_cause_retry(tmp_path: Path):
         """
         Test that in case URLError raise while trying to download GTFS Files - will cause to retry downloading files
         """
@@ -65,7 +67,8 @@ class TestGtfsExtractor:
         # Assert
         assert retriever.download_file_from_ftp.call_count == number_of_retries
 
-    def test_init(self):
+    @staticmethod
+    def test_init():
         # Arrange
         folder = Path('foo')
 
@@ -76,7 +79,8 @@ class TestGtfsExtractor:
         assert actual.folder == folder
         assert actual.app_config == GTFS_EXTRACTOR_CONFIG
 
-    def test_retrieve_gtfs_files__all_files_created(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files__all_files_created(tmp_path: Path):
         # Arrange
         gtfs_retriever = GtfsRetriever(folder=tmp_path)
 
@@ -93,7 +97,8 @@ class TestGtfsExtractor:
 
         assert tmp_path.joinpath(GTFS_METADATA_FILE).is_file()
 
-    def test_retrieve_gtfs_files__metadata_file_is_correct(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files__metadata_file_is_correct(tmp_path: Path):
         # Arrange
         gtfs_retriever = GtfsRetriever(folder=tmp_path)
         gtfs_retriever.download_file_from_ftp = fake_download_file_from_ftp
@@ -107,7 +112,9 @@ class TestGtfsExtractor:
 
 
 class TestMain:
-    def test_write_gtfs_metadata_into_file(self, tmp_path: Path):
+
+    @staticmethod
+    def test_write_gtfs_metadata_into_file(tmp_path: Path):
         # Arrange
         base = Path(__file__).parent.joinpath('resources', 'gtfs_extract_assets')
         output = tmp_path.joinpath('metadata.file')
@@ -122,7 +129,8 @@ class TestMain:
         # Assert
         assert GTFSFiles.parse_file(output)
 
-    def test_analyze_gtfs_stat(self, tmp_path):
+    @staticmethod
+    def test_analyze_gtfs_stat(tmp_path):
 
         trip_stats, route_stats, _ = analyze_gtfs_stat(date_to_analyze=datetime.date(2019, 3, 7),
                                                        output_folder=tmp_path,

@@ -1,10 +1,12 @@
-import unittest
 import datetime
+import unittest
 from pathlib import Path
 
-from open_bus_stride_db import db
 from open_bus_stride_db.model import GtfsRoute
+from open_bus_stride_db.model.base import meta
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+
 from open_bus_gtfs_etl.gtfs_loader import RouteStatRecord, Loader, StopStatRecord, RideStatRecord
 
 route_for_example = RouteStatRecord(date=datetime.date(2021, 12, 11), route_id=1, agency_id=25, route_short_name='1',
@@ -102,8 +104,8 @@ class TestLoader(unittest.TestCase):
 
         """
         # Arrange
-        engine = db.engine  # create_engine('sqlite://')
-        # meta.create_all(engine)
+        engine = create_engine('sqlite://')
+        meta.create_all(engine)
 
         # Act
         for _ in range(2):

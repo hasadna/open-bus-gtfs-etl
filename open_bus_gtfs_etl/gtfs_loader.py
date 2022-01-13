@@ -1,7 +1,7 @@
 import datetime
 from datetime import date
 from pathlib import Path
-from typing import Optional, List, Any, Dict, Generator
+from typing import List, Any, Dict, Generator
 
 from open_bus_stride_db import db
 from open_bus_stride_db.model import GtfsRoute, GtfsRouteStop, GtfsStop, GtfsRide

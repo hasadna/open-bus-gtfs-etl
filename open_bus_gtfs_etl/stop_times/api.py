@@ -1,12 +1,13 @@
+import datetime
 import os
 import zipfile
-import datetime
 from collections import defaultdict
 
-from ..api import parse_date_str
-from ..config import GTFS_ETL_ROOT_ARCHIVES_FOLDER
-from open_bus_stride_db.db import session_decorator, Session
 from open_bus_stride_db import model
+from open_bus_stride_db.db import session_decorator, Session
+
+from open_bus_gtfs_etl.api import parse_date_str
+from open_bus_gtfs_etl.config import GTFS_ETL_ROOT_ARCHIVES_FOLDER
 
 
 def parse_time(timestr):
@@ -62,7 +63,7 @@ class ObjectsMaker:
                 del self._rides_cache[self._rides_index.pop(0)]
             self._rides_index.append(trip_id)
             rides = self._session.query(model.Ride).filter(model.Ride.journey_ref == trip_id,
-                                                           model.Ride.is_from_gtfs == True).order_by(
+                                                           model.Ride.is_from_gtfs is True).order_by(
                 model.Ride.scheduled_start_time).all()
             if len(rides) == 0:
                 self._stats['no rides for trip_id'] += 1
@@ -76,7 +77,7 @@ class ObjectsMaker:
     def get_stop(self, stop_id):
         if stop_id not in self._stops_cache:
             stops = self._session.query(model.Stop).filter(model.Stop.code == stop_id,
-                                                           model.Stop.is_from_gtfs == True,
+                                                           model.Stop.is_from_gtfs is True,
                                                            model.Stop.min_date <= self._date,
                                                            self._date <= model.Stop.max_date).order_by(
                 model.Stop.id).all()
@@ -117,7 +118,7 @@ def load_to_db(session: Session, date, limit, no_count):
                 continue
             ride_stop = session.query(model.RideStop).filter(model.RideStop.ride == ride,
                                                              model.RideStop.stop == stop,
-                                                             model.RideStop.is_from_gtfs == True).one_or_none()
+                                                             model.RideStop.is_from_gtfs is True).one_or_none()
             if not ride_stop:
                 stats['created new ride_stop'] += 1
                 session.add(model.RideStop(

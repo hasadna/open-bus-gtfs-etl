@@ -6,13 +6,13 @@ from pathlib import Path
 from tempfile import mkdtemp
 import logging
 
+from open_bus_gtfs_etl import config
 from open_bus_gtfs_etl.archives import Archives
+from open_bus_gtfs_etl.common import http_stream_download
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFSFiles, GTFS_METADATA_FILE
+from open_bus_gtfs_etl.gtfs_loader import Loader
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, dump_trip_and_route_stat, \
     ROUTE_STAT_FILE_NAME
-from . import config
-from .common import http_stream_download
-from .gtfs_loader import Loader
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -37,7 +37,7 @@ def parse_date_str(date):
     """Parses a date string in format %Y-%m-%d with default of today if empty"""
     if isinstance(date, datetime.date):
         return date
-    elif not date:
+    if not date:
         return datetime.date.today()
     return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
@@ -124,11 +124,11 @@ def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = N
                 tmp_folder = mkdtemp()
                 gtfs_files = download_gtfs_files(Path(tmp_folder))
 
-                _trip_stat, route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
-                                                           gtfs_files=gtfs_files)
+                _trip_stat, _route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
+                                                                             gtfs_files=gtfs_files)
             else:
-                _trip_stat, route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
-                                                           gtfs_metadata_file=gtfs_metadata_file)
+                _trip_stat, _route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
+                                                                             gtfs_metadata_file=gtfs_metadata_file)
 
         Loader(route_stat_file).upsert_routes()
 
@@ -147,16 +147,16 @@ def cleanup_dated_paths(num_days_keep, num_weeklies_keep):
 def download_gtfs_files_from_stride(date):
     date = parse_date_str(date)
     assert date, 'must provide date'
-    base_url = 'https://open-bus-gtfs-data.hasadna.org.il/gtfs_archive/{}/'.format(date.strftime('%Y/%m/%d'))
+    base_url = f'https://open-bus-gtfs-data.hasadna.org.il/gtfs_archive/{date.strftime("%Y/%m/%d")}/'
     base_path = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'gtfs_archive', date.strftime('%Y/%m/%d'))
-    print("Downloading GTFS files from {} to {}".format(base_url, base_path))
+    print(f"Downloading GTFS files from {base_url} to {base_path}")
     for filename in ['ClusterToLine.zip', 'Tariff.zip', 'TripIdToDate.zip', 'israel-public-transportation.zip']:
         url = base_url + filename
         path = os.path.join(base_path, filename)
         http_stream_download(path, url=url)
-    base_url = 'https://open-bus-gtfs-data.hasadna.org.il/stat_archive/{}/'.format(date.strftime('%Y/%m/%d'))
+    base_url = f'https://open-bus-gtfs-data.hasadna.org.il/stat_archive/{date.strftime("%Y/%m/%d")}/'
     base_path = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'stat_archive', date.strftime('%Y/%m/%d'))
-    print("Downloading GTFS files from {} to {}".format(base_url, base_path))
+    print(f"Downloading GTFS files from {base_url} to {base_path}")
     for filename in ['route_stats.csv.gz', 'trip_stats.csv.gz']:
         url = base_url + filename
         path = os.path.join(base_path, filename)
