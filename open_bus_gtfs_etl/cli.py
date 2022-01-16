@@ -1,7 +1,7 @@
 import click
 
 from open_bus_gtfs_etl import api
-from .stop_times import cli as stop_times_cli
+from open_bus_gtfs_etl.stop_times.cli import stop_times
 
 
 @click.group()
@@ -9,7 +9,7 @@ def main():
     pass
 
 
-main.add_command(stop_times_cli.stop_times)
+main.add_command(stop_times)
 
 
 @main.command()

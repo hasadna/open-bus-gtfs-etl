@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 from contextlib import closing
+from logging import getLogger
 from pathlib import Path
 from typing import Dict, List
 from urllib import request
@@ -9,8 +10,6 @@ from urllib.error import URLError
 
 from pydantic import BaseModel
 from tqdm import tqdm
-
-from logging import getLogger
 
 GTFS_METADATA_FILE = '.gtfs_metadata.json'
 __CONFIGURATION_FILE_NAME = "gtfs_extractor.config"
@@ -82,10 +81,10 @@ class GtfsRetriever:
 
                 return gtfs_files
 
-            except URLError as e:
+            except URLError as err:
                 logger.exception(f"Failed to Download GTFS Files. {i} tryout of "
                                  f"{len(self.app_config.download_retries_delay)} tryouts. Going to wait {delay_in_sec} "
-                                 f"sec before the next try. error: {str(e)}")
+                                 f"sec before the next try. error: {str(err)}")
                 time.sleep(delay_in_sec)
 
         raise DownloadingException('Failed to Download GTFS Files.')

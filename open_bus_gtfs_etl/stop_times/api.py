@@ -1,12 +1,13 @@
+import datetime
 import os
 import zipfile
-import datetime
 from collections import defaultdict
 
-from ..api import parse_date_str
-from ..config import GTFS_ETL_ROOT_ARCHIVES_FOLDER
-from open_bus_stride_db.db import session_decorator, Session
 from open_bus_stride_db import model
+from open_bus_stride_db.db import session_decorator, Session
+
+from open_bus_gtfs_etl.api import parse_date_str
+from open_bus_gtfs_etl.config import GTFS_ETL_ROOT_ARCHIVES_FOLDER
 
 
 def parse_time(timestr):
@@ -33,10 +34,11 @@ def list_(date, limit):
                         row['stop_sequence'] = int(row['stop_sequence'])
                         row['pickup_type'] = int(row['pickup_type'])
                         row['drop_off_type'] = int(row['drop_off_type'])
-                        row['shape_dist_traveled'] = int(row['shape_dist_traveled']) if row['shape_dist_traveled'] else 0
+                        row['shape_dist_traveled'] = int(row['shape_dist_traveled']) \
+                            if row['shape_dist_traveled'] else 0
                         row['arrival_time'] = parse_time(row.pop('arrival_time'))
                         row['departure_time'] = parse_time(row.pop('departure_time'))
-                    except:
+                    except Exception:
                         print("Failed to parse line: {}".format(line))
                         raise
                     yield row
@@ -61,7 +63,8 @@ class ObjectsMaker:
                 del self._rides_cache[self._rides_index.pop(0)]
             self._rides_index.append(trip_id)
             rides = self._session.query(model.Ride).filter(model.Ride.journey_ref == trip_id,
-                                                           model.Ride.is_from_gtfs == True).order_by(model.Ride.scheduled_start_time).all()
+                                                           model.Ride.is_from_gtfs is True).order_by(
+                model.Ride.scheduled_start_time).all()
             if len(rides) == 0:
                 self._stats['no rides for trip_id'] += 1
                 self._rides_cache[trip_id] = False
@@ -74,9 +77,10 @@ class ObjectsMaker:
     def get_stop(self, stop_id):
         if stop_id not in self._stops_cache:
             stops = self._session.query(model.Stop).filter(model.Stop.code == stop_id,
-                                                           model.Stop.is_from_gtfs == True,
+                                                           model.Stop.is_from_gtfs is True,
                                                            model.Stop.min_date <= self._date,
-                                                           self._date <= model.Stop.max_date).order_by(model.Stop.id).all()
+                                                           self._date <= model.Stop.max_date).order_by(
+                model.Stop.id).all()
             if len(stops) == 0:
                 self._stats['no stops for stop_id'] += 1
                 self._stops_cache[stop_id] = False
@@ -104,7 +108,8 @@ def load_to_db(session: Session, date, limit, no_count):
     start_time = datetime.datetime.now()
     for i, stop_time in enumerate(list_(date, limit)):
         if i % 10000 == 9999:
-            print('{}s: {} / {} ({}%)'.format((datetime.datetime.now() - start_time).total_seconds(), i, count, i / count * 100))
+            print('{}s: {} / {} ({}%)'.format((datetime.datetime.now() - start_time).total_seconds(), i, count,
+                                              i / count * 100))
             print(dict(stats))
         try:
             ride = objects_maker.get_ride(stop_time['trip_id'])
@@ -113,9 +118,9 @@ def load_to_db(session: Session, date, limit, no_count):
                 continue
             ride_stop = session.query(model.RideStop).filter(model.RideStop.ride == ride,
                                                              model.RideStop.stop == stop,
-                                                             model.RideStop.is_from_gtfs == True).one_or_none()
+                                                             model.RideStop.is_from_gtfs is True).one_or_none()
             if not ride_stop:
-                stats['created new ride_stop'] +=1
+                stats['created new ride_stop'] += 1
                 session.add(model.RideStop(
                     ride=ride, stop=stop,
                     is_from_gtfs=True,
@@ -134,7 +139,7 @@ def load_to_db(session: Session, date, limit, no_count):
                 ride_stop.gtfs_pickup_type = stop_time['pickup_type']
                 ride_stop.gtfs_drop_off_type = stop_time['drop_off_type']
                 ride_stop.gtfs_shape_dist_traveled = stop_time['shape_dist_traveled']
-        except:
+        except Exception:
             print("Failed to load stop_time to db: {}".format(stop_time))
             raise
     session.commit()

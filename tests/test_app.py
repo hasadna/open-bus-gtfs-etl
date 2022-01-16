@@ -10,19 +10,26 @@ from open_bus_gtfs_etl.archives import Archives
 from open_bus_gtfs_etl.gtfs_extractor.gtfs_extractor import GtfsRetriever, GTFS_EXTRACTOR_CONFIG, GTFSFiles, \
     GTFS_METADATA_FILE, GtfsExtractorConfig, DownloadingException
 from open_bus_gtfs_etl.gtfs_stat.gtfs_stats import create_trip_and_route_stat, ROUTE_STAT_FILE_NAME, TRIP_STAT_FILE_NAME
-from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat, \
-    analyze_gtfs_stat_into_archive_folder, download_gtfs_files_into_archive_folder
+from open_bus_gtfs_etl.api import write_gtfs_metadata_into_file, analyze_gtfs_stat
 
 
 # pylint: disable=unused-argument
 def fake_download_file_from_ftp(url, local_file: Path):
+    """
+    fake method to simulate downloading from ftp. fake data is written without the need for real
+    connection to a ftp server
+    Args:
+        url: not used, needed for the API
+        local_file: path to write to.
+    """
     with local_file.open('w') as f:
         f.write("foobar")
 
 
 class TestGtfsExtractor:
 
-    def test_retrieve_gtfs_files_with_irrelevant_error_wont_cause_retry(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files_with_irrelevant_error_wont_cause_retry(tmp_path: Path):
         """
         Test that in case other error than URLError raise the app wont retry to download GTFS Files.
         """
@@ -40,7 +47,8 @@ class TestGtfsExtractor:
         # Assert
         retriever.download_file_from_ftp.assert_called_once()
 
-    def test_retrieve_gtfs_files_with_relevant_error_cause_retry(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files_with_relevant_error_cause_retry(tmp_path: Path):
         """
         Test that in case URLError raise while trying to download GTFS Files - will cause to retry downloading files
         """
@@ -59,7 +67,8 @@ class TestGtfsExtractor:
         # Assert
         assert retriever.download_file_from_ftp.call_count == number_of_retries
 
-    def test_init(self):
+    @staticmethod
+    def test_init():
         # Arrange
         folder = Path('foo')
 
@@ -70,7 +79,8 @@ class TestGtfsExtractor:
         assert actual.folder == folder
         assert actual.app_config == GTFS_EXTRACTOR_CONFIG
 
-    def test_retrieve_gtfs_files__all_files_created(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files__all_files_created(tmp_path: Path):
         # Arrange
         gtfs_retriever = GtfsRetriever(folder=tmp_path)
 
@@ -87,7 +97,8 @@ class TestGtfsExtractor:
 
         assert tmp_path.joinpath(GTFS_METADATA_FILE).is_file()
 
-    def test_retrieve_gtfs_files__metadata_file_is_correct(self, tmp_path: Path):
+    @staticmethod
+    def test_retrieve_gtfs_files__metadata_file_is_correct(tmp_path: Path):
         # Arrange
         gtfs_retriever = GtfsRetriever(folder=tmp_path)
         gtfs_retriever.download_file_from_ftp = fake_download_file_from_ftp
@@ -101,7 +112,9 @@ class TestGtfsExtractor:
 
 
 class TestMain:
-    def test_write_gtfs_metadata_into_file(self, tmp_path: Path):
+
+    @staticmethod
+    def test_write_gtfs_metadata_into_file(tmp_path: Path):
         # Arrange
         base = Path(__file__).parent.joinpath('resources', 'gtfs_extract_assets')
         output = tmp_path.joinpath('metadata.file')
@@ -116,30 +129,20 @@ class TestMain:
         # Assert
         assert GTFSFiles.parse_file(output)
 
-    @pytest.mark.skip('missing test data to run this test')
-    def test_analyze_gtfs_stat_into_archive_folder(self):
+    @staticmethod
+    def test_analyze_gtfs_stat(tmp_path):
 
-
-
-        analyze_gtfs_stat_into_archive_folder(datetime.date(2019, 3, 7), Archives(Path(__file__).parent.joinpath('resources/example_archive_folder')))
-
-
-        """"
-        resources/example_archive_folder/gtfs_archive/2019/03/07/.gtfs_metadata.json
-        resources/example_archive_folder/gtfs_archive/2019/03/07/.gtfs_metadata.json
-        """
-
-    def test_analyze_gtfs_stat(self, tmp_path):
-
-        trip_stats, route_stats = analyze_gtfs_stat(date_to_analyze=datetime.date(2019, 3, 7),
-                                                    output_folder=tmp_path,
-                                                    gtfs_metadata_file=Path('tests/resources/gtfs_extract_assets/.gtfs_metadata.json'))
+        trip_stats, route_stats, _ = analyze_gtfs_stat(date_to_analyze=datetime.date(2019, 3, 7),
+                                                       output_folder=tmp_path,
+                                                       gtfs_metadata_file=Path(
+                                                           'tests/resources/gtfs_extract_assets/.gtfs_metadata.json'))
 
         assert tmp_path.joinpath(ROUTE_STAT_FILE_NAME).is_file()
         assert tmp_path.joinpath(TRIP_STAT_FILE_NAME).is_file()
         assert (trip_stats.shape, route_stats.shape) == ((74, 49), (3, 58))
 
-    def test_analyze_gtfs_stat_with_output_folder_with_a_dot_in_name(self, tmp_path):
+    @staticmethod
+    def test_analyze_gtfs_stat_with_output_folder_with_a_dot_in_name(tmp_path):
         """
         Test a use case described in https://github.com/hasadna/open-bus/issues/345
         """
@@ -147,18 +150,20 @@ class TestMain:
         tmp_path = tmp_path.joinpath('.data')
         os.mkdir(tmp_path)
 
-        trip_stats, route_stats = analyze_gtfs_stat(date_to_analyze=datetime.date(2019, 3, 7),
+        trip_stats, route_stats, route_stat_file = analyze_gtfs_stat(date_to_analyze=datetime.date(2019, 3, 7),
                                                     output_folder=tmp_path,
                                                     gtfs_metadata_file=Path('./tests/resources/gtfs_extract_assets/'
                                                                             '.gtfs_metadata.json'))
-
+        assert tmp_path.joinpath(route_stat_file).is_file()
         assert tmp_path.joinpath(ROUTE_STAT_FILE_NAME).is_file()
         assert tmp_path.joinpath(TRIP_STAT_FILE_NAME).is_file()
         assert (trip_stats.shape, route_stats.shape) == ((74, 49), (3, 58))
 
 
 class TestGtgsStat:
-    def test_create_trip_and_route_stat(self, tmp_path: Path):
+
+    @staticmethod
+    def test_create_trip_and_route_stat(tmp_path: Path):
         # Arrange
         base = Path(__file__).parent.joinpath('resources', 'gtfs_extract_assets')
         gtfs_files = GTFSFiles.parse_file(Path(base).joinpath(GTFS_METADATA_FILE))
@@ -173,23 +178,16 @@ class TestGtgsStat:
 
 
 class TestArchives:
-    def test_get_dated_path(self):
+    @staticmethod
+    def test_get_dated_path():
         path = Path('tests/resources/example_archive_folder')
         actual = Archives(path).gtfs.get_dated_path(datetime.date(2000, 10, 20))
         expected = Archives(path).gtfs.root_folder.joinpath('2000', '10', '20')
         assert expected == actual
 
-    def test_get_dated_path_with_file(self):
+    @staticmethod
+    def test_get_dated_path_with_file():
         path = Path('tests/resources/example_archive_folder')
         actual = Archives(path).gtfs.get_dated_path(datetime.date(2000, 10, 20), 'filename')
         expected = Archives(path).gtfs.root_folder.joinpath('2000', '10', '20', 'filename')
         assert expected == actual
-
-
-
-
-"""
-/home/aviv/tmp/open-bus-gtfs-etl/tests/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip
-/home/aviv/tmp/open-bus-gtfs-etl/resources/gtfs_extract_assets/2019-03-07-israel-public-transportation.zip
-
-"""
