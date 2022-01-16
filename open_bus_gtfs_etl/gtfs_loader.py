@@ -171,17 +171,16 @@ class Loader:
     class that manages the ETL from stat file into DB
     """
 
-    def __init__(self, route_stat_path: Path, date_to_load: datetime.date = None):
+    def __init__(self, route_stat_path: Path, get_session=None):
         self.route_stat_path = route_stat_path
-        if date_to_load is None:
-            date_to_load = datetime.date.today()
-        self.date_to_load = date_to_load
+        self.get_session = get_session if get_session else db.get_session
 
     def get_routes_from_stat_file(self) -> Generator[RouteStatRecord, None, None]:
         """
         Parse Route Stat file into iterator of RouteRecord
 
         """
+        # TODO: don't load the full data to RAM, iterate row by row from disk
         route_stat_content: DataFrame = read_stat_file(path=self.route_stat_path)
         route_iter = route_stat_content.iterrows()
         return (RouteStatRecord.from_row(dict(stat_file_row.iteritems()))
@@ -189,28 +188,24 @@ class Loader:
                 in tqdm(total=len(route_stat_content.index), iterable=route_iter,
                         desc='Processing Routes From Stat File'))
 
-    def upsert_routes(self, engine=None):
+    def upsert_routes(self):
         """
         upsert operation that in case same route is found will update it (delete the old one and create a new record),
         in case there is no same route - a new route will be created.
         UnsupportedDatabaseState exception will be raised in case there is no unique route record per day in database
         DatabaseException exception will be raised in case there is error related to database
         """
-        if engine is None:
-            engine = db.engine
-
-        with Session(engine) as session:
+        with self.get_session() as session:
             try:
                 for route in self.get_routes_from_stat_file():
-                    self._delete_route_if_exists(session, route)
-
+                    self._check_existing_route(session, route)
                     session.add(route.convert_to_gtfs_route_record())
                 session.commit()
             except SQLAlchemyError as err:
                 raise DatabaseException("got unexpected error from DB") from err
 
     @staticmethod
-    def _delete_route_if_exists(session: Session, route: RouteStatRecord):
+    def _check_existing_route(session: Session, route: RouteStatRecord):
         """
         in case a record of a route is already existed for that date - delete it.
         MOT Documentation says that the combination of route mkt, direction, and alternative is unique for given date
@@ -228,4 +223,9 @@ class Loader:
             raise UnsupportedDatabaseState('expected that the combination of route mkt, date, direction, and '
                                            'alternative will be unique but it is not') from err
         if existed_record:
-            session.delete(existed_record)
+            # TODO: deletion of existing data should be handled externally
+            # in the future we will relate this data to other data and deletion is more complex
+            # this code should assume it only adds new data
+            raise UnsupportedDatabaseState('route already exists, but we cannot delete it as it might logically '
+                                           'be related to other data')
+            # session.delete(existed_record)

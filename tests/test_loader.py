@@ -1,13 +1,15 @@
+import contextlib
 import datetime
 import unittest
 from pathlib import Path
 
+import pytest
 from open_bus_stride_db.model import GtfsRoute
 from open_bus_stride_db.model.base import meta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from open_bus_gtfs_etl.gtfs_loader import RouteStatRecord, Loader, StopStatRecord, RideStatRecord
+from open_bus_gtfs_etl.gtfs_loader import RouteStatRecord, Loader, StopStatRecord, RideStatRecord, UnsupportedDatabaseState
 
 route_for_example = RouteStatRecord(date=datetime.date(2021, 12, 11), route_id=1, agency_id=25, route_short_name='1',
                                     route_long_name='ת. רכבת יבנה מערב-יבנה<->ת. רכבת יבנה מזרח-יבנה-1#',
@@ -100,16 +102,22 @@ class TestLoader(unittest.TestCase):
     @staticmethod
     def test_evaluate_upsert_action():
         """
-        trying to add same route twice will end up with one record only
+        trying to add same route twice will raise an exception
 
         """
         # Arrange
         engine = create_engine('sqlite://')
         meta.create_all(engine)
 
+        @contextlib.contextmanager
+        def get_sqlite_session():
+            with Session(engine) as session:
+                yield session
+
         # Act
-        for _ in range(2):
-            Loader(Path('tests/resources/simple_route_stat.csv')).upsert_routes(engine)
+        Loader(Path('tests/resources/simple_route_stat.csv'), get_session=get_sqlite_session).upsert_routes()
+        with pytest.raises(UnsupportedDatabaseState):
+            Loader(Path('tests/resources/simple_route_stat.csv'), get_session=get_sqlite_session).upsert_routes()
 
         # Assert (That no exception will be raised when checking that there are only single legit record of route)
         with Session(engine) as session:
