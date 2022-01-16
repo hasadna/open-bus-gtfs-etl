@@ -38,7 +38,7 @@ def list_(date, limit):
                             if row['shape_dist_traveled'] else 0
                         row['arrival_time'] = parse_time(row.pop('arrival_time'))
                         row['departure_time'] = parse_time(row.pop('departure_time'))
-                    except:
+                    except Exception:
                         print("Failed to parse line: {}".format(line))
                         raise
                     yield row
@@ -139,7 +139,7 @@ def load_to_db(session: Session, date, limit, no_count):
                 ride_stop.gtfs_pickup_type = stop_time['pickup_type']
                 ride_stop.gtfs_drop_off_type = stop_time['drop_off_type']
                 ride_stop.gtfs_shape_dist_traveled = stop_time['shape_dist_traveled']
-        except:
+        except Exception:
             print("Failed to load stop_time to db: {}".format(stop_time))
             raise
     session.commit()
