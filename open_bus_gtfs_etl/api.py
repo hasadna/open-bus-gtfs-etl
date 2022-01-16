@@ -1,9 +1,7 @@
 import os
 import datetime
-import shutil
 import sys
 from pathlib import Path
-from tempfile import mkdtemp
 import logging
 
 from open_bus_gtfs_etl import config
@@ -71,7 +69,7 @@ def load_analyzed_gtfs_stat_from_archive_folder(date: str, archives: Archives = 
     if not route_stat_file.is_file():
         raise UserError(f"Can't find relevant route stat file at {route_stat_file}. "
                         f"Please check that you analyze gtfs files first.")
-    main(route_stat_file=route_stat_file)
+    Loader(route_stat_file).upsert_routes()
 
 
 def download_gtfs_files(outputs_folder: Path) -> GTFSFiles:
@@ -108,33 +106,6 @@ def analyze_gtfs_stat(date_to_analyze: datetime.date, gtfs_metadata_file: Path =
                                                    output_folder=output_folder)
 
     return trip_stats, route_stats, routs_stat_path
-
-
-def main(gtfs_metadata_file: Path = None, date_to_analyze: datetime.datetime = None, route_stat_file: Path = None):
-
-    tmp_folder = None
-
-    try:
-        if date_to_analyze is None:
-            date_to_analyze = datetime.datetime.today().date()
-
-        if route_stat_file is None:
-
-            if gtfs_metadata_file is None:
-                tmp_folder = mkdtemp()
-                gtfs_files = download_gtfs_files(Path(tmp_folder))
-
-                _trip_stat, _route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
-                                                                             gtfs_files=gtfs_files)
-            else:
-                _trip_stat, _route_stat, route_stat_file = analyze_gtfs_stat(date_to_analyze=date_to_analyze,
-                                                                             gtfs_metadata_file=gtfs_metadata_file)
-
-        Loader(route_stat_file).upsert_routes()
-
-    finally:
-        if tmp_folder is not None:
-            shutil.rmtree(tmp_folder)
 
 
 def cleanup_dated_paths(num_days_keep, num_weeklies_keep):
