@@ -1,9 +1,14 @@
 import os
 import shutil
 import tempfile
+import datetime
+from pathlib import Path
 from contextlib import contextmanager
 
+import psutil
 import requests
+
+from . import config
 
 
 @contextmanager
@@ -23,3 +28,36 @@ def http_stream_download(filename, **requests_kwargs):
             for chunk in res.iter_content(chunk_size=8192):
                 if chunk:  # filter out keep-alive new chunks
                     f.write(chunk)
+
+
+def parse_date_str(date):
+    """Parses a date string in format %Y-%m-%d with default of today if empty"""
+    if isinstance(date, datetime.date):
+        return date
+    if not date:
+        return datetime.date.today()
+    return datetime.datetime.strptime(date, '%Y-%m-%d').date()
+
+
+def get_workdir(workdir):
+    if not workdir:
+        workdir = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'workdir')
+    return workdir
+
+
+def get_dated_path(date, *args):
+    return Path(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, config.GTFS_ARCHIVE_FOLDER).joinpath(date.strftime('%Y/%m/%d'), *args)
+
+
+@contextmanager
+def print_memory_usage(start_msg, end_msg="Done"):
+    print(start_msg)
+    yield
+    print(end_msg)
+    print("Resident memory: {}mb".format(psutil.Process().memory_info().rss / (1024 * 1024)))
+
+
+class UserError(Exception):
+    """
+    Exception that represent error caused by wrong input of user
+    """

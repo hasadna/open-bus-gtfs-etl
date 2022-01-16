@@ -11,8 +11,8 @@ from open_bus_gtfs_etl.gtfs_stat.core_computations import get_zones_df, get_clus
 from open_bus_gtfs_etl.gtfs_stat.output import save_dataframe_to_file
 from open_bus_gtfs_etl.gtfs_stat.partridge_helper import prepare_partridge_feed
 
-TRIP_STAT_FILE_NAME = 'trip_stats.csv.gz'
-ROUTE_STAT_FILE_NAME = 'route_stats.csv.gz'
+TRIP_STAT_FILE_NAME = 'trip_stats.csv'
+ROUTE_STAT_FILE_NAME = 'route_stats.csv'
 
 
 def analyze_gtfs_date(date_to_analyze: date, gtfs_file_path: Path, tariff_file_path: Path,

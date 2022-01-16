@@ -2,7 +2,6 @@
 
 import datetime
 import logging
-import zipfile
 from pathlib import Path
 from typing import List
 
@@ -19,14 +18,12 @@ TARIFF_TO_REFORM_ZONE = 'StationToReformZone.txt'
 CLUSTER_TO_LINE_TXT_NAME = 'ClusterToLine.txt'
 
 
-def _read_almost_valid_csv_to_df(zip_path: Path, file_name_in_zip, real_columns):
+def _read_almost_valid_csv_to_df(path: Path, file_name_in_path, real_columns):
     """ Read almost-valid csv files, which are not actually valid, while jiggling the columns a bit. """
 
     cols = real_columns + ['EXTRA']
-    with zipfile.ZipFile(zip_path) as zf:
-        with zf.open(file_name_in_zip) as file_in_zip:
-            df = pd.read_csv(file_in_zip, header=None, skiprows=[0], names=cols) \
-                    .drop(columns=['EXTRA'])
+    df = pd.read_csv(Path(path, file_name_in_path), header=None, skiprows=[0], names=cols) \
+            .drop(columns=['EXTRA'])
 
     return df
 
@@ -56,7 +53,7 @@ def get_trip_id_to_date_df(local_file_path: Path,
                            columns: List[str] = None) -> pd.DataFrame:
     """
     returns the TripIdToDate information that matches the given date
-    :param local_file_path: The path if the zip file
+    :param local_file_path: The path containing the files to process
     :param date: The date to filter by
     :param columns: list of the columns names for the return DataFrame, if invalid column name raises ValueError
     :return: A DataFrame with the columns `route_id`, `trip_id_to_date` and `start_time`
@@ -104,11 +101,11 @@ def get_zones_df(local_tariff_zip_path):
     return zones
 
 
-def get_clusters_df(local_cluster_zip_path):
+def get_clusters_df(local_cluster_path):
     cluster_cols = ['OperatorName', 'OfficeLineId', 'OperatorLineId', 'ClusterName', 'FromDate', 'ToDate', 'ClusterId',
                     'LineType', 'LineTypeDesc', 'ClusterSubDesc']
 
-    clusters_df = _read_almost_valid_csv_to_df(local_cluster_zip_path, CLUSTER_TO_LINE_TXT_NAME, cluster_cols)
+    clusters_df = _read_almost_valid_csv_to_df(local_cluster_path, CLUSTER_TO_LINE_TXT_NAME, cluster_cols)
 
     clusters_df = clusters_df.rename(columns={
         'ClusterId': 'cluster_id',

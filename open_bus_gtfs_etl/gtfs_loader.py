@@ -31,7 +31,7 @@ class RideStatRecord(BaseModel):
     represent the ride section in route stat record
     """
     trip_id_to_date: int
-    trip_id: int
+    trip_id: str
     start_time: datetime.datetime
 
     def convert_to_gtfs_ride(self) -> GtfsRide:
@@ -44,7 +44,7 @@ class RideStatRecord(BaseModel):
         Returns: GtfsRide
 
         """
-        return GtfsRide(scheduled_start_time=self.start_time, journey_ref=self.trip_id_to_date)
+        return GtfsRide(scheduled_start_time=self.start_time, journey_ref=self.trip_id)
 
 
 class StopStatRecord(BaseModel):
@@ -67,8 +67,8 @@ class StopStatRecord(BaseModel):
         Returns: GtfsStop
 
         """
-        return GtfsStop(date=update_date, code=self.stop_code, lat=self.lat, lon=self.lon, name=self.stop_name,
-                        city=self.desc_city)
+        return GtfsStop(date=update_date, code=self.stop_code, lat=self.lat, lon=self.lon,
+                        name=self.stop_name, city=self.desc_city, mot_id=self.stop_id)
 
 
 def handel_special_time_format(base_date: str, special_time_format: str) -> datetime.datetime:

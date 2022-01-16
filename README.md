@@ -68,6 +68,8 @@ See the help message for available tasks:
 open-bus-gtfs-etl --help
 ```
 
+See [open_bus_gtfs_etl/dags.yaml](open_bus_gtfs_etl/dags.yaml) for the steps which run on Airflow. 
+
 ### Lint / Tests
 
 Install tests requirements
