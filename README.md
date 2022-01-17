@@ -19,6 +19,8 @@ using your local Python interpreter.
 
 ### Install
 
+[install levelDB](https://github.com/akariv/kvfile#installing-leveldb)
+
 Create virtualenv (Python 3.8)
 
 ```
@@ -70,26 +72,6 @@ open-bus-gtfs-etl --help
 
 See [open_bus_gtfs_etl/dags.yaml](open_bus_gtfs_etl/dags.yaml) for the steps which run on Airflow. 
 
-### Lint / Tests
-
-Install tests requirements
-
-```
-pip install -r tests/requirements.txt
-```
-
-Lint
-
-```
-bin/lint.sh
-```
-
-Test
-
-```
-pytest
-```
-
 ### Supported Operations and Configurations
 
 #### Environment variables
@@ -99,6 +81,12 @@ See [open_bus_gtfs_etl/config.py](open_bus_gtfs_etl/config.py) for the relevant 
 DB connection is managed by [open-bus-stride-db](https://github.com/hasadna/open-bus-stride-db),
 see that project's README for details.
 
-### Supported Operations 
+#### Supported Operations 
 
 See the CLI Help message for details.
+
+### Tests and code before refactoring
+
+Following commit has tests and gtfs stats code which was deleted, it might be useful in the future
+in case we will want to use these tests or the code for reference:
+https://github.com/hasadna/open-bus-gtfs-etl/tree/93d313d5a039f5297dd95f96c3e5eb2f00b4cc72
