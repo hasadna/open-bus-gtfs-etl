@@ -74,3 +74,10 @@
         kwargs:
           num_days_keep: {default: 10}
           num_weeklies_keep: {default: 10}
+    - id: trigger-stride-etl-gtfs-update-ride-aggregations-dag
+      depends_on:
+        - load_stop_times_to_db
+      config:
+        type: trigger_dag
+        trigger_dag_id: stride-etl-gtfs-update-ride-aggregations
+        pass_conf_params: [date]
