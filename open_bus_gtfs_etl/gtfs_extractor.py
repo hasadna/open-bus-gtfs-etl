@@ -12,7 +12,6 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 GTFS_METADATA_FILE = '.gtfs_metadata.json'
-__CONFIGURATION_FILE_NAME = "gtfs_extractor.config"
 
 logger = getLogger(__file__)
 
@@ -36,8 +35,25 @@ class GtfsExtractorConfig(BaseModel):
     download_retries_delay: List[int]
 
 
-GTFS_EXTRACTOR_CONFIG: GtfsExtractorConfig = GtfsExtractorConfig.parse_file(Path(__file__)
-                                                                            .parent.joinpath(__CONFIGURATION_FILE_NAME))
+GTFS_EXTRACTOR_CONFIG: GtfsExtractorConfig = GtfsExtractorConfig.parse_obj({
+  "gtfs_file": {
+    "url": "ftp://gtfs.mot.gov.il/israel-public-transportation.zip",
+    "local_name": "israel-public-transportation.zip"
+  },
+  "tariff_file": {
+    "url": "ftp://gtfs.mot.gov.il/Tariff.zip",
+    "local_name": "Tariff.zip"
+  },
+  "cluster_file": {
+    "url": "ftp://gtfs.mot.gov.il/ClusterToLine.zip",
+    "local_name": "ClusterToLine.zip"
+  },
+  "trip_id_to_date_file": {
+    "url": "ftp://gtfs.mot.gov.il/TripIdToDate.zip",
+    "local_name": "TripIdToDate.zip"
+  },
+  "download_retries_delay": [30, 60, 120, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240]
+})
 
 
 class GTFSFiles(BaseModel):

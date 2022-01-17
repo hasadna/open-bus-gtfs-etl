@@ -3,46 +3,7 @@ name: Python package
 on: [push, pull_request]
 
 jobs:
-  test:
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        path: open-bus-gtfs-etl
-
-    - name: Checkout tools repo
-      uses: actions/checkout@v2
-      with:
-        repository: hasadna/open-bus-stride-db
-        path: open-bus-stride-db
-
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip &&\
-        pip install -r open-bus-stride-db/requirements.txt &&\
-        pip install -e open-bus-stride-db &&\
-        pip install -r open-bus-gtfs-etl/requirements.txt &&\
-        pip install -r open-bus-gtfs-etl/tests/requirements.txt &&\
-        pip install -e open-bus-gtfs-etl
-    - name: Test and lint
-      run: |
-        cd open-bus-gtfs-etl &&\
-        bin/lint.sh &&\
-        pytest --cov-report=xml --cov=open_bus_gtfs_etl
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        fail_ci_if_error: true
   deploy:
-    needs: test
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2

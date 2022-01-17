@@ -53,8 +53,7 @@ def get_dated_path(date, *args):
 def print_memory_usage(start_msg, end_msg="Done"):
     print(start_msg)
     yield
-    print(end_msg)
-    print("Resident memory: {}mb".format(psutil.Process().memory_info().rss / (1024 * 1024)))
+    print("{}. Resident memory: {}mb".format(end_msg, psutil.Process().memory_info().rss / (1024 * 1024)))
 
 
 class UserError(Exception):
