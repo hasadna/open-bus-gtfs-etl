@@ -20,11 +20,14 @@ def main():
 @click.option('--date', type=str,
               help="Date string (%Y-%m-%d). If provided will attempt to download old data from stride project. "
                    "If not provided will download latest data for current date from MOT.")
-def download(date):
+@click.option('--force-download', is_flag=True,
+              help="Force download of data, even if data already exists locally")
+def download(date, force_download):
     """Downloads the daily gtfs data and store in a directory structure: gtfs_data/YEAR/MONTH/DAY"""
     if date:
-        download_api.from_stride(date)
+        download_api.from_stride(date, force_download)
     else:
+        assert not force_download
         download_api.from_mot()
 
 

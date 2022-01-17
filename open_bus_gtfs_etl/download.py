@@ -11,7 +11,7 @@ def from_mot():
     gtfs_extractor.GtfsRetriever(archive_folder).retrieve_gtfs_files()
 
 
-def from_stride(date):
+def from_stride(date, force_download):
     date = common.parse_date_str(date)
     assert date, 'must provide date or download analyzed data'
     base_url = f'https://open-bus-gtfs-data.hasadna.org.il/gtfs_archive/{date.strftime("%Y/%m/%d")}/'
@@ -20,4 +20,7 @@ def from_stride(date):
     for filename in ['ClusterToLine.zip', 'Tariff.zip', 'TripIdToDate.zip', 'israel-public-transportation.zip']:
         url = base_url + filename
         path = os.path.join(base_path, filename)
-        common.http_stream_download(path, url=url)
+        if os.path.exists(path) and not force_download:
+            print("File already exists: {}".format(path))
+        else:
+            common.http_stream_download(path, url=url)
