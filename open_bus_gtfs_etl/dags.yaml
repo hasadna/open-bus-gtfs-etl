@@ -10,8 +10,6 @@
         function: download
         kwargs:
           date: {}
-          analyzed: {}
-          workdir: {}
     - id: extract
       depends_on:
         - download
@@ -22,39 +20,52 @@
         kwargs:
           date: {}
           workdir: {}
-    - id: analyze
+    - id: load_stops_to_db
       depends_on:
         - extract
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
-        function: analyze
+        function: load_stops_to_db
         kwargs:
           date: {}
           workdir: {}
-    - id: load-to-db
+    - id: load_routes_to_db
       depends_on:
-        - analyze
+        - extract
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
-        function: load_to_db
+        function: load_routes_to_db
         kwargs:
+          date: {}
           workdir: {}
-#    - id: stop-times-load-to-db
-#      depends_on:
-#        - load-to-db
-#      config:
-#        type: cli
-#        module: open_bus_gtfs_etl.stop_times.cli
-#        function: load_to_db
-#        kwargs:
-#          date: {}
-#          limit: {}
-#          no_count: {}
+    - id: load_trips_to_db
+      depends_on:
+        - load_routes_to_db
+      config:
+        type: cli
+        module: open_bus_gtfs_etl.cli
+        function: load_trips_to_db
+        kwargs:
+          date: {}
+          workdir: {}
+    - id: load_stop_times_to_db
+      depends_on:
+        - load_trips_to_db
+        - load_stops_to_db
+      config:
+        type: cli
+        module: open_bus_gtfs_etl.cli
+        function: load_stop_times_to_db
+        kwargs:
+          date: {}
+          workdir: {}
+          limit: {}
+          debug: {}
     - id: cleanup-dated-paths
       depends_on:
-        - analyze
+        - download
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
