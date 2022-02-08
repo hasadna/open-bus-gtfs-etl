@@ -39,10 +39,8 @@ def parse_date_str(date):
     return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
 
-def get_workdir(workdir):
-    if not workdir:
-        workdir = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'workdir')
-    return workdir
+def get_dated_workdir(date):
+    return os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'workdir', date.strftime('%Y/%m/%d'))
 
 
 def get_dated_path(date, *args):

@@ -3,44 +3,36 @@
   description: |
     Load GTFS data to DB
   tasks:
-    - id: download
+    - id: download_extract
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
-        function: download
+        function: download_extract
         kwargs:
+          from_mot: {default: true}
+          from_stride: {default: false}
           date: {}
           force_download: {}
-    - id: extract
-      depends_on:
-        - download
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: extract
-        kwargs:
-          date: {}
-          workdir: {}
+          num_retries: {default: 10}
+          retry_sleep_seconds: {default: 120}
     - id: load_stops_to_db
       depends_on:
-        - extract
+        - download_extract
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
         function: load_stops_to_db
         kwargs:
           date: {}
-          workdir: {}
     - id: load_routes_to_db
       depends_on:
-        - extract
+        - download_extract
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
         function: load_routes_to_db
         kwargs:
           date: {}
-          workdir: {}
     - id: load_trips_to_db
       depends_on:
         - load_routes_to_db
@@ -50,7 +42,6 @@
         function: load_trips_to_db
         kwargs:
           date: {}
-          workdir: {}
     - id: load_stop_times_to_db
       depends_on:
         - load_trips_to_db
@@ -61,12 +52,11 @@
         function: load_stop_times_to_db
         kwargs:
           date: {}
-          workdir: {}
           limit: {}
           debug: {}
     - id: cleanup-dated-paths
       depends_on:
-        - download
+        - download_extract
       config:
         type: cli
         module: open_bus_gtfs_etl.cli
@@ -76,8 +66,20 @@
           num_weeklies_keep: {default: 10}
     - id: trigger-stride-etl-gtfs-update-ride-aggregations-dag
       depends_on:
+        - load_stops_to_db
+        - load_routes_to_db
+        - load_trips_to_db
         - load_stop_times_to_db
       config:
         type: trigger_dag
         trigger_dag_id: stride-etl-gtfs-update-ride-aggregations
         pass_conf_params: [date]
+    - id: cleanup_workdir
+      depends_on:
+        - trigger-stride-etl-gtfs-update-ride-aggregations-dag
+      config:
+        type: cli
+        module: open_bus_gtfs_etl.cli
+        function: cleanup_workdir
+        kwargs:
+          date: {}
