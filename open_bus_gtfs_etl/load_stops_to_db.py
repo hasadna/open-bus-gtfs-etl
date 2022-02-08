@@ -19,13 +19,13 @@ def parse_stop_desc(stop_desc, stats):
 
 
 @session_decorator
-def main(session: Session, date: str, workdir: str):
+def main(session: Session, date: str):
     date = common.parse_date_str(date)
-    workdir = common.get_workdir(workdir)
+    dated_workdir = common.get_dated_workdir(date)
     stats = defaultdict(int)
     with common.print_memory_usage("Preparing partridge feed..."):
         feed = partridge_helper.prepare_partridge_feed(
-            date, Path(workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
+            date, Path(dated_workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
         )
     with common.print_memory_usage('Getting all stops from DB...'):
         gtfs_stops_by_code = {

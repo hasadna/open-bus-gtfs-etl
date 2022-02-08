@@ -9,6 +9,7 @@ def from_mot():
     archive_folder = common.get_dated_path(date)
     print("Downloading GTFS files to archive folder: {}".format(archive_folder))
     gtfs_extractor.GtfsRetriever(archive_folder).retrieve_gtfs_files()
+    return date
 
 
 def from_stride(date, force_download):
@@ -24,3 +25,4 @@ def from_stride(date, force_download):
             print("File already exists: {}".format(path))
         else:
             common.http_stream_download(path, url=url)
+    return date

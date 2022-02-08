@@ -39,9 +39,9 @@ def parse_gtfs_datetime(gtfs_time, date, stats, debug):
             raise
 
 
-def main(date: str, workdir: str, limit: int, debug: bool):
+def main(date: str, limit: int, debug: bool):
     date = common.parse_date_str(date)
-    workdir = common.get_workdir(workdir)
+    dated_workdir = common.get_dated_workdir(date)
     stats = defaultdict(int)
     with get_session() as session:
         with common.print_memory_usage('Getting all mot_ids from DB...'):
@@ -64,7 +64,7 @@ def main(date: str, workdir: str, limit: int, debug: bool):
             }
     with common.print_memory_usage("Preparing partridge feed..."):
         feed = partridge_helper.prepare_partridge_feed(
-            date, Path(workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
+            date, Path(dated_workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
         )
     print("Preparing data for quick loading from disk...")
     rownums_by_route_id = {}
