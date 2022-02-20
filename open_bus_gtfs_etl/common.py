@@ -47,6 +47,10 @@ def get_dated_path(date, *args):
     return Path(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, config.GTFS_ARCHIVE_FOLDER).joinpath(date.strftime('%Y/%m/%d'), *args)
 
 
+def get_s3_dated_path(date, *args):
+    return os.path.join(f's3://{config.OPEN_BUS_STRIDE_PUBLIC_S3_BUCKET_NAME}/{config.GTFS_ARCHIVE_FOLDER}/{date.strftime("%Y/%m/%d")}', *args)
+
+
 @contextmanager
 def print_memory_usage(start_msg, end_msg="Done"):
     print(start_msg)
