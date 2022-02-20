@@ -8,6 +8,7 @@ from . import (
     load_stop_times_to_db as load_stop_times_to_db_api,
     cleanup_dated_paths as cleanup_dated_paths_api,
     cleanup_workdir as cleanup_workdir_api,
+    upload_to_s3 as upload_to_s3_api
 )
 
 
@@ -76,5 +77,15 @@ def cleanup_dated_paths(**kwargs):
 @main.command()
 @click.option('--date', type=str, help="Date string (%Y-%m-%d) to cleanup. If not provided uses current date")
 def cleanup_workdir(**kwargs):
-    """Deleted the dated workdir after all work was done"""
+    """Deletes the dated workdir after all work was done"""
     cleanup_workdir_api.main(**kwargs)
+
+
+@main.command()
+@click.option('--date', type=str, help="Date string (%Y-%m-%d) which corresponds to the local gtfs data path to upload to S3. "
+                                       "If not provided uses current date")
+@click.option('--force', is_flag=True, help="Force upload even if file already exists remotely")
+@click.option('--upload-all', is_flag=True, help="Upload all local dated paths")
+def upload_to_s3(**kwargs):
+    """Uploads GTFS archive to S3"""
+    upload_to_s3_api.main(**kwargs)
