@@ -21,7 +21,7 @@ def main(session: Session, date: str):
         gtfs_rides_by_journey_ref = {
             gtfs_ride.journey_ref: gtfs_ride
             for gtfs_ride
-            in session.query(model.GtfsRide).join(model.GtfsRoute).where(model.GtfsRoute.date == date).all()
+            in session.query(model.GtfsRide).join(model.GtfsRoute.gtfs_rides).where(model.GtfsRoute.date == date).all()
         }
         stats['existing rides loaded from DB'] = len(gtfs_rides_by_journey_ref)
     with common.print_memory_usage('Getting all routes from DB...'):

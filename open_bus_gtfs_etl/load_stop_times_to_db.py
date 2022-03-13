@@ -60,7 +60,7 @@ def main(date: str, limit: int, debug: bool):
             gtfs_route_ids_ride_ids_by_journey_ref = {
                 gtfs_ride.journey_ref: (gtfs_ride.gtfs_route_id, gtfs_ride.id)
                 for gtfs_ride
-                in session.query(model.GtfsRide).join(model.GtfsRoute).where(model.GtfsRoute.date == date).all()
+                in session.query(model.GtfsRide).join(model.GtfsRoute.gtfs_rides).where(model.GtfsRoute.date == date).all()
             }
     with common.print_memory_usage("Preparing partridge feed..."):
         feed = partridge_helper.prepare_partridge_feed(
@@ -117,7 +117,7 @@ def main(date: str, limit: int, debug: bool):
                 gtfs_ride_stops_by_gtfs_ride_id_gtfs_stop_id = {
                     '{}-{}'.format(gtfs_ride_stop.gtfs_ride_id, gtfs_ride_stop.gtfs_stop_id): gtfs_ride_stop
                     for gtfs_ride_stop
-                    in session.query(model.GtfsRideStop).join(model.GtfsRide).where(model.GtfsRide.gtfs_route_id == gtfs_route_id).all()
+                    in session.query(model.GtfsRideStop).join(model.GtfsRide.gtfs_ride_stops).where(model.GtfsRide.gtfs_route_id == gtfs_route_id).all()
                 }
             with common.print_memory_usage('Upserting data...'):
                 for rownum in rownums:
