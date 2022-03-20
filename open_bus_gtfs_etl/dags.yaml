@@ -105,7 +105,7 @@
   tasks:
     - id: load_missing_data
       config:
-        type: cli
+        type: api
         module: open_bus_gtfs_etl.load_missing_data
         function: main
         kwargs:
