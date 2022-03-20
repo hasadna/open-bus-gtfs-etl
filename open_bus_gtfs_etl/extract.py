@@ -10,10 +10,11 @@ class ExtractUnzipException(Exception):
     pass
 
 
-def main(date):
+def main(date, silent=False):
     date = common.parse_date_str(date)
     dated_workdir = common.get_dated_workdir(date)
-    print("Extracting GTFS data for date {} to workdir {}".format(date, dated_workdir))
+    if not silent:
+        print("Extracting GTFS data for date {} to workdir {}".format(date, dated_workdir))
     base_path = common.get_dated_path(date)
     gtfs_file_path = Path(base_path, 'israel-public-transportation.zip').absolute()
     tariff_file_path = Path(base_path, 'Tariff.zip').absolute()
@@ -28,5 +29,5 @@ def main(date):
         extracted_path = os.path.join(dated_workdir, extracted_rel_path)
         shutil.rmtree(extracted_path, ignore_errors=True)
         os.makedirs(extracted_path, exist_ok=True)
-        if subprocess.call(['unzip', zip_file_name], cwd=extracted_path) != 0:
+        if subprocess.call(['unzip', zip_file_name], cwd=extracted_path, **({'stdout': subprocess.DEVNULL} if silent else {})) != 0:
             raise ExtractUnzipException()

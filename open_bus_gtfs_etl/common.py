@@ -52,10 +52,12 @@ def get_s3_dated_path(date, *args):
 
 
 @contextmanager
-def print_memory_usage(start_msg, end_msg="Done"):
-    print(start_msg)
+def print_memory_usage(start_msg, end_msg="Done", silent=False):
+    if not silent:
+        print(start_msg)
     yield
-    print("{}. Resident memory: {}mb".format(end_msg, psutil.Process().memory_info().rss / (1024 * 1024)))
+    if not silent:
+        print("{}. Resident memory: {}mb".format(end_msg, psutil.Process().memory_info().rss / (1024 * 1024)))
 
 
 class UserError(Exception):

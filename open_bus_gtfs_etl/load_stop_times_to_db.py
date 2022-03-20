@@ -39,12 +39,12 @@ def parse_gtfs_datetime(gtfs_time, date, stats, debug):
             raise
 
 
-def main(date: str, limit: int, debug: bool):
+def main(date: str, limit: int, debug: bool, silent=False):
     date = common.parse_date_str(date)
     dated_workdir = common.get_dated_workdir(date)
     stats = defaultdict(int)
     with get_session() as session:
-        with common.print_memory_usage('Getting all mot_ids from DB...'):
+        with common.print_memory_usage('Getting all mot_ids from DB...', silent=silent):
             gtfs_stop_id_by_mot_ids = {
                 mot_id: gtfs_stop_id
                 for gtfs_stop_id, mot_id
@@ -56,17 +56,18 @@ def main(date: str, limit: int, debug: bool):
                 """.format(date.strftime('%Y-%m-%d')))).fetchall()
             }
             stats['existing mot ids loaded from DB'] = len(gtfs_stop_id_by_mot_ids)
-        with common.print_memory_usage('Getting all route and ride ids from DB...'):
+        with common.print_memory_usage('Getting all route and ride ids from DB...', silent=silent):
             gtfs_route_ids_ride_ids_by_journey_ref = {
                 gtfs_ride.journey_ref: (gtfs_ride.gtfs_route_id, gtfs_ride.id)
                 for gtfs_ride
                 in session.query(model.GtfsRide).join(model.GtfsRoute.gtfs_rides).where(model.GtfsRoute.date == date).all()
             }
-    with common.print_memory_usage("Preparing partridge feed..."):
+    with common.print_memory_usage("Preparing partridge feed...", silent=silent):
         feed = partridge_helper.prepare_partridge_feed(
             date, Path(dated_workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
         )
-    print("Preparing data for quick loading from disk...")
+    if not silent:
+        print("Preparing data for quick loading from disk...")
     rownums_by_route_id = {}
     assert kvfile.db_kind == 'LevelDB', "If not using LevelDB operation is very slow!"
     kv = kvfile.KVFile()
@@ -74,7 +75,7 @@ def main(date: str, limit: int, debug: bool):
     if limit:
         stop_times = stop_times.head(limit)
     for rownum, row in enumerate(stop_times.to_dict('records')):
-        if debug or rownum % 10000 == 0:
+        if not silent and (debug or rownum % 10000 == 0):
             print('rownum {}'.format(rownum))
         trip_id = row['trip_id']
         gtfs_route_id_ride_id = gtfs_route_ids_ride_ids_by_journey_ref.get(trip_id)
@@ -111,15 +112,16 @@ def main(date: str, limit: int, debug: bool):
     i = 0
     for gtfs_route_id, rownums in rownums_by_route_id.items():
         i += 1
-        print("Processing gtfs_route_id {} ({}/{})".format(gtfs_route_id, i, len(rownums_by_route_id)))
+        if not silent:
+            print("Processing gtfs_route_id {} ({}/{})".format(gtfs_route_id, i, len(rownums_by_route_id)))
         with get_session() as session:
-            with common.print_memory_usage('Getting all ride_stops from DB...'):
+            with common.print_memory_usage('Getting all ride_stops from DB...', silent=silent):
                 gtfs_ride_stops_by_gtfs_ride_id_gtfs_stop_id = {
                     '{}-{}'.format(gtfs_ride_stop.gtfs_ride_id, gtfs_ride_stop.gtfs_stop_id): gtfs_ride_stop
                     for gtfs_ride_stop
                     in session.query(model.GtfsRideStop).join(model.GtfsRide.gtfs_ride_stops).where(model.GtfsRide.gtfs_route_id == gtfs_route_id).all()
                 }
-            with common.print_memory_usage('Upserting data...'):
+            with common.print_memory_usage('Upserting data...', silent=silent):
                 for rownum in rownums:
                     row = json.loads(kv.get(str(rownum)))
                     row['arrival_time'] = datetime.datetime.strptime(row['arrival_time'], '%Y-%m-%d %H:%M:%S %z')
@@ -145,7 +147,10 @@ def main(date: str, limit: int, debug: bool):
                             drop_off_type=row['drop_off_type'],
                             shape_dist_traveled=row['shape_dist_traveled'],
                         ))
-            pprint(dict(stats))
-            with common.print_memory_usage('Committing...'):
+            if not silent:
+                pprint(dict(stats))
+            with common.print_memory_usage('Committing...', silent=silent):
                 session.commit()
-    pprint(dict(stats))
+    if not silent:
+        pprint(dict(stats))
+    return stats

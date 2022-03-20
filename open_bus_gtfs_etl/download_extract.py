@@ -5,7 +5,7 @@ from . import download, extract, upload_to_s3
 
 
 def main(from_mot=False, from_stride=False, date=None, force_download=False, num_retries=None,
-         retry_sleep_seconds=120):
+         retry_sleep_seconds=120, silent=False):
     if from_mot:
         assert not from_stride, 'must choose either from_mot or from_stride, but not both'
         assert not date, 'must not specify date when choosing from_mot - it always downloads latest data'
@@ -27,10 +27,11 @@ def main(from_mot=False, from_stride=False, date=None, force_download=False, num
         if from_mot:
             date = download.from_mot()
         else:
-            date = download.from_stride(date, force_download)
-        print(f'Downloaded date: {date}, proceeding with extract..')
+            date = download.from_stride(date, force_download, silent=silent)
+        if not silent:
+            print(f'Downloaded date: {date}, proceeding with extract..')
         try:
-            extract.main(date)
+            extract.main(date, silent=silent)
             is_success = True
         except extract.ExtractUnzipException:
             traceback.print_exc()

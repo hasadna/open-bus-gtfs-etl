@@ -12,12 +12,13 @@ def from_mot():
     return date
 
 
-def from_stride(date, force_download):
+def from_stride(date, force_download, silent=False):
     date = common.parse_date_str(date)
     assert date, 'must provide date or download analyzed data'
-    base_url = f'https://open-bus-gtfs-data.hasadna.org.il/gtfs_archive/{date.strftime("%Y/%m/%d")}/'
+    base_url = f'https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/{date.strftime("%Y/%m/%d")}/'
     base_path = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'gtfs_archive', date.strftime('%Y/%m/%d'))
-    print(f"Downloading GTFS files from {base_url} to {base_path}")
+    if not silent:
+        print(f"Downloading GTFS files from {base_url} to {base_path}")
     for filename in ['ClusterToLine.zip', 'Tariff.zip', 'TripIdToDate.zip', 'israel-public-transportation.zip']:
         url = base_url + filename
         path = os.path.join(base_path, filename)

@@ -8,7 +8,8 @@ from . import (
     load_stop_times_to_db as load_stop_times_to_db_api,
     cleanup_dated_paths as cleanup_dated_paths_api,
     cleanup_workdir as cleanup_workdir_api,
-    upload_to_s3 as upload_to_s3_api
+    upload_to_s3 as upload_to_s3_api,
+    load_missing_data as load_missing_data_api
 )
 
 
@@ -89,3 +90,11 @@ def cleanup_workdir(**kwargs):
 def upload_to_s3(**kwargs):
     """Uploads GTFS archive to S3"""
     upload_to_s3_api.main(**kwargs)
+
+
+@main.command()
+@click.argument('FROM_DATE')
+@click.argument('TO_DATE')
+def load_missing_data(**kwargs):
+    """Download and load missing GTFS data to the DB"""
+    load_missing_data_api.main(**kwargs)

@@ -9,11 +9,11 @@ from . import common, config, partridge_helper
 
 
 @session_decorator
-def main(session: Session, date: str):
+def main(session: Session, date: str, silent=False):
     date = common.parse_date_str(date)
     dated_workdir = common.get_dated_workdir(date)
     stats = defaultdict(int)
-    with common.print_memory_usage("Preparing partridge feed..."):
+    with common.print_memory_usage("Preparing partridge feed...", silent=silent):
         feed = partridge_helper.prepare_partridge_feed(
             date, Path(dated_workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
         )
@@ -23,14 +23,14 @@ def main(session: Session, date: str):
         feed.agency[['agency_id', 'agency_name']].to_dict('records')
     }
     stats['agencies from source feed'] = len(agencies_by_id)
-    with common.print_memory_usage('Getting all routes from DB...'):
+    with common.print_memory_usage('Getting all routes from DB...', silent=silent):
         gtfs_routes_by_line_ref = {
             int(gtfs_route.line_ref): gtfs_route
             for gtfs_route
             in session.query(model.GtfsRoute).where(model.GtfsRoute.date == date).all()
         }
         stats['existing routes loaded from DB'] = len(gtfs_routes_by_line_ref)
-    with common.print_memory_usage('Upserting data...'):
+    with common.print_memory_usage('Upserting data...', silent=silent):
         for row in feed.routes[[
             'route_id', 'route_short_name', 'route_long_name', 'route_type', 'agency_id', 'route_desc'
         ]].to_dict('records'):
@@ -68,6 +68,8 @@ def main(session: Session, date: str):
                     agency_name=agency_name,
                     route_type=row['route_type']
                 ))
-    with common.print_memory_usage('Committing...'):
+    with common.print_memory_usage('Committing...', silent=silent):
         session.commit()
-    pprint(dict(stats))
+    if not silent:
+        pprint(dict(stats))
+    return stats

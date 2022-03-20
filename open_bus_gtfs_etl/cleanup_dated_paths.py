@@ -6,8 +6,9 @@ from collections import defaultdict
 from . import config, common
 
 
-def delete_dated_path(date):
-    print("Delete: {}".format(date))
+def delete_dated_path(date, silent=False):
+    if not silent:
+        print("Delete: {}".format(date))
     shutil.rmtree(common.get_dated_path(date))
 
 
@@ -24,7 +25,7 @@ def iterate_dated_path_dates():
                 yield datetime.date(year, month, day)
 
 
-def main(num_days_keep, num_weeklies_keep):
+def main(num_days_keep, num_weeklies_keep, silent=False):
     stats = defaultdict(int)
     weekly_dates = []
     delete_dates = []
@@ -37,7 +38,7 @@ def main(num_days_keep, num_weeklies_keep):
         else:
             weekly_dates.append(date)
     for date in delete_dates:
-        delete_dated_path(date)
+        delete_dated_path(date, silent=silent)
     last_date = None
     for date in sorted(weekly_dates):
         if last_date is None or last_date + datetime.timedelta(days=7) <= date:
@@ -45,5 +46,6 @@ def main(num_days_keep, num_weeklies_keep):
             last_date = date
         else:
             stats['Delete dates not kept in weeklies'] += 1
-            delete_dated_path(date)
-    print(dict(stats))
+            delete_dated_path(date, silent=silent)
+    if not silent:
+        print(dict(stats))

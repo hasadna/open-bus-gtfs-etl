@@ -19,22 +19,22 @@ def parse_stop_desc(stop_desc, stats):
 
 
 @session_decorator
-def main(session: Session, date: str):
+def main(session: Session, date: str, silent=False):
     date = common.parse_date_str(date)
     dated_workdir = common.get_dated_workdir(date)
     stats = defaultdict(int)
-    with common.print_memory_usage("Preparing partridge feed..."):
+    with common.print_memory_usage("Preparing partridge feed...", silent=silent):
         feed = partridge_helper.prepare_partridge_feed(
             date, Path(dated_workdir, config.WORKDIR_ISRAEL_PUBLIC_TRANSPORTATION)
         )
-    with common.print_memory_usage('Getting all stops from DB...'):
+    with common.print_memory_usage('Getting all stops from DB...', silent=silent):
         gtfs_stops_by_code = {
             int(gtfs_stop.code): gtfs_stop
             for gtfs_stop
             in session.query(model.GtfsStop).where(model.GtfsStop.date == date).all()
         }
         stats['existing stops in DB'] = len(gtfs_stops_by_code)
-    with common.print_memory_usage('Getting all mot_ids from DB...'):
+    with common.print_memory_usage('Getting all mot_ids from DB...', silent=silent):
         mot_ids_by_code = {}
         for stop_code, mot_id in session.execute(dedent("""
             select s.code, m.mot_id
@@ -44,7 +44,7 @@ def main(session: Session, date: str):
         """.format(date.strftime('%Y-%m-%d')))).fetchall():
             mot_ids_by_code.setdefault(int(stop_code), set()).add(int(mot_id))
         stats['existing stops with mot ids in DB'] = len(mot_ids_by_code)
-    with common.print_memory_usage('Upserting data...'):
+    with common.print_memory_usage('Upserting data...', silent=silent):
         for row in feed.stops[[
             'stop_id', 'stop_name', 'stop_lat', 'stop_lon', 'stop_code', 'stop_desc'
         ]].to_dict('records'):
@@ -79,6 +79,8 @@ def main(session: Session, date: str):
                 stats['stop mot id rows inserted to DB'] += 1
                 mot_ids_by_code[stop_code] = {stop_id}
                 session.add(model.GtfsStopMotId(gtfs_stop=gtfs_stop, mot_id=stop_id))
-    with common.print_memory_usage('Committing...'):
+    with common.print_memory_usage('Committing...', silent=silent):
         session.commit()
-    pprint(dict(stats))
+    if not silent:
+        pprint(dict(stats))
+    return stats
