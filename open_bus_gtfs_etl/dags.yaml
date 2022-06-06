@@ -2,6 +2,16 @@
   schedule_interval: "@daily"
   description: |
     Load GTFS data to DB
+  docs:
+    desc: |
+      Daily scheduled job which runs on midnight and downloads the GTFS data from MOT of current day and updates it in the Stride DB.
+      
+      Loads the data to the DB tables: [[gtfs_stop]], [[gtfs_route]], [[gtfs_ride]], [[gtfs_ride_stop]], [[gtfs_stop_mot_id]].
+      
+      Source data is also publically available in the following format: 
+      `https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/year/month/dat/filename`,
+      for example: https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/2022/06/03/ClusterToLine.zip
+      possible values for filename: `ClusterToLine.zip`, `Tariff.zip`, `TripIdToDate.zip`, `israel-public-transportation.zip`.      
   tasks:
     - id: download_extract
       config:
@@ -87,6 +97,8 @@
 - name: gtfs-etl-upload-to-s3
   description: |
     Manual trigger for uploading GTFS data to S3
+  docs:
+    hide: true
   tasks:
     - id: upload_to_s3
       config:
@@ -102,6 +114,8 @@
   description: |
     Manual trigger for loading missing data to the DB
     {"from_date": "2022-03-19", "to_date": "2022-03-15"}
+  docs:
+    hide: true
   tasks:
     - id: load_missing_data
       config:
