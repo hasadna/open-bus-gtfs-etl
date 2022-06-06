@@ -11,7 +11,9 @@
       Source data is also publically available in the following format: 
       `https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/year/month/dat/filename`,
       for example: https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/2022/06/03/ClusterToLine.zip
-      possible values for filename: `ClusterToLine.zip`, `Tariff.zip`, `TripIdToDate.zip`, `israel-public-transportation.zip`.      
+      possible values for filename: `ClusterToLine.zip`, `Tariff.zip`, `TripIdToDate.zip`, `israel-public-transportation.zip`.
+      
+      When all loading to DB is done, it triggers the following job: [[stride-etl-gtfs-update-ride-aggregations]]
   tasks:
     - id: download_extract
       config:
