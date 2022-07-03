@@ -9,9 +9,9 @@ from . import common, config, partridge_helper
 
 
 @session_decorator
-def main(session: Session, date: str, silent=False):
+def main(session: Session, date: str, silent=False, extracted_workdir=None):
     date = common.parse_date_str(date)
-    dated_workdir = common.get_dated_workdir(date)
+    dated_workdir = extracted_workdir if extracted_workdir else common.get_dated_workdir(date)
     stats = defaultdict(int)
     with common.print_memory_usage("Preparing partridge feed...", silent=silent):
         feed = partridge_helper.prepare_partridge_feed(

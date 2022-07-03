@@ -10,12 +10,18 @@ class ExtractUnzipException(Exception):
     pass
 
 
-def main(date, silent=False):
+def main(date, silent=False, archive_folder=None, extracted_workdir=None):
     date = common.parse_date_str(date)
-    dated_workdir = common.get_dated_workdir(date)
+    if extracted_workdir:
+        dated_workdir = extracted_workdir
+    else:
+        dated_workdir = common.get_dated_workdir(date)
     if not silent:
         print("Extracting GTFS data for date {} to workdir {}".format(date, dated_workdir))
-    base_path = common.get_dated_path(date)
+    if archive_folder:
+        base_path = archive_folder
+    else:
+        base_path = common.get_dated_path(date)
     gtfs_file_path = Path(base_path, 'israel-public-transportation.zip').absolute()
     tariff_file_path = Path(base_path, 'Tariff.zip').absolute()
     cluster_to_line_file_path = Path(base_path, 'ClusterToLine.zip').absolute()

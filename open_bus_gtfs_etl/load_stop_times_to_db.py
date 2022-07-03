@@ -39,9 +39,9 @@ def parse_gtfs_datetime(gtfs_time, date, stats, debug):
             raise
 
 
-def main(date: str, limit: int, debug: bool, silent=False):
+def main(date: str, limit: int, debug: bool, silent=False, extracted_workdir=None):
     date = common.parse_date_str(date)
-    dated_workdir = common.get_dated_workdir(date)
+    dated_workdir = extracted_workdir if extracted_workdir else common.get_dated_workdir(date)
     stats = defaultdict(int)
     with get_session() as session:
         with common.print_memory_usage('Getting all mot_ids from DB...', silent=silent):
