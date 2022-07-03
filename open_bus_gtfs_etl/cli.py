@@ -9,7 +9,8 @@ from . import (
     cleanup_dated_paths as cleanup_dated_paths_api,
     cleanup_workdir as cleanup_workdir_api,
     upload_to_s3 as upload_to_s3_api,
-    load_missing_data as load_missing_data_api
+    load_missing_data as load_missing_data_api,
+    full_process as full_process_api
 )
 
 
@@ -98,3 +99,10 @@ def upload_to_s3(**kwargs):
 def load_missing_data(**kwargs):
     """Download and load missing GTFS data to the DB"""
     load_missing_data_api.main(**kwargs)
+
+
+@main.command()
+@click.option('--last-days')
+@click.option('--max-run-time-seconds')
+def full_process(**kwargs):
+    full_process_api.main(**kwargs)
