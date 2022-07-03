@@ -1,7 +1,7 @@
 import click
 
 from . import (
-    download_extract as download_extract_api,
+    download_extract_upload as download_extract_api,
     load_stops_to_db as load_stops_to_db_api,
     load_routes_to_db as load_routes_to_db_api,
     load_trips_to_db as load_trips_to_db_api,

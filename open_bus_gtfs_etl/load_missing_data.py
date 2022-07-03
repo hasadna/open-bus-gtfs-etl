@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from . import (
     common,
-    download_extract,
+    download_extract_upload,
     load_stops_to_db,
     load_routes_to_db,
     load_trips_to_db,
@@ -18,7 +18,7 @@ def load_missing_data(dt):
     stats = defaultdict(int)
     start_time = datetime.datetime.now()
     try:
-        download_extract.main(from_stride=True, date=dt, force_download=True, silent=True)
+        download_extract_upload.main(from_stride=True, date=dt, force_download=True, silent=True)
         load_stops_stats = load_stops_to_db.main(dt, silent=True)
         stats['stop rows updated in DB'] += load_stops_stats['rows updated in DB']
         stats['stop rows inserted to DB'] += load_stops_stats['rows inserted to DB']
