@@ -8,8 +8,6 @@ from . import (
     load_stop_times_to_db as load_stop_times_to_db_api,
     cleanup_dated_paths as cleanup_dated_paths_api,
     cleanup_workdir as cleanup_workdir_api,
-    upload_to_s3 as upload_to_s3_api,
-    load_missing_data as load_missing_data_api,
     full_process as full_process_api
 )
 
@@ -84,25 +82,8 @@ def cleanup_workdir(**kwargs):
 
 
 @main.command()
-@click.option('--date', type=str, help="Date string (%Y-%m-%d) which corresponds to the local gtfs data path to upload to S3. "
-                                       "If not provided uses current date")
-@click.option('--force', is_flag=True, help="Force upload even if file already exists remotely")
-@click.option('--upload-all', is_flag=True, help="Upload all local dated paths")
-def upload_to_s3(**kwargs):
-    """Uploads GTFS archive to S3"""
-    upload_to_s3_api.main(**kwargs)
-
-
-@main.command()
-@click.argument('FROM_DATE')
-@click.argument('TO_DATE')
-def load_missing_data(**kwargs):
-    """Download and load missing GTFS data to the DB"""
-    load_missing_data_api.main(**kwargs)
-
-
-@main.command()
 @click.option('--last-days')
 @click.option('--max-run-time-seconds')
+@click.option('--only-date')
 def full_process(**kwargs):
     full_process_api.main(**kwargs)

@@ -39,6 +39,15 @@ def parse_date_str(date):
     return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
 
+def parse_None(val):
+    # due to a problem with airflow dag initialization, in some cases we get
+    # the actual string 'None' which we need to handle as None
+    if val is None or val == 'None':
+        return None
+    else:
+        return val
+
+
 def get_dated_workdir(date):
     return os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'workdir', date.strftime('%Y/%m/%d'))
 

@@ -18,35 +18,4 @@
         kwargs:
           last_days: {}
           max_run_time_seconds: {}
-
-- name: gtfs-etl-upload-to-s3
-  description: |
-    Manual trigger for uploading GTFS data to S3
-  docs:
-    hide: true
-  tasks:
-    - id: upload_to_s3
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: upload_to_s3
-        kwargs:
-          date: {}
-          force: {}
-          upload_all: {}
-
-- name: gtfs-etl-load-missing-data
-  description: |
-    Manual trigger for loading missing data to the DB
-    {"from_date": "2022-03-19", "to_date": "2022-03-15"}
-  docs:
-    hide: true
-  tasks:
-    - id: load_missing_data
-      config:
-        type: api
-        module: open_bus_gtfs_etl.load_missing_data
-        function: main
-        kwargs:
-          from_date: {}
-          to_date: {}
+          only_date: {}
