@@ -8,7 +8,8 @@ from . import (
     load_stop_times_to_db as load_stop_times_to_db_api,
     cleanup_dated_paths as cleanup_dated_paths_api,
     cleanup_workdir as cleanup_workdir_api,
-    full_process as full_process_api
+    full_process as full_process_api,
+    update_gtfs_data_db_from_s3 as update_gtfs_data_db_from_s3_api,
 )
 
 
@@ -87,3 +88,10 @@ def cleanup_workdir(**kwargs):
 @click.option('--only-date')
 def full_process(**kwargs):
     full_process_api.main(**kwargs)
+
+
+@main.command()
+@click.option('--last-days')
+def update_gtfs_data_db_from_s3(**kwargs):
+    """Update the gtfs data in the DB from the S3 bucket"""
+    update_gtfs_data_db_from_s3_api.main(**kwargs)

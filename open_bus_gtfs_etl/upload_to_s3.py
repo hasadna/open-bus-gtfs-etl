@@ -37,10 +37,9 @@ def main_upload_all(force=False):
             main(date, force)
 
 
-def main(date=None, force=False, upload_all=False, upload_date=None, archive_folder=None):
+def main(date=None, force=False, upload_all=False, archive_folder=None):
     if upload_all:
         assert not archive_folder
-        assert not upload_date
         assert not date
         main_upload_all(force)
     else:
@@ -49,13 +48,11 @@ def main(date=None, force=False, upload_all=False, upload_date=None, archive_fol
             base_path = archive_folder
         else:
             base_path = common.get_dated_path(date)
-        if not upload_date:
-            upload_date = date
-        print(f"Uploading from local path '{base_path}' to s3 path '{common.get_s3_dated_path(upload_date)}'")
+        print(f"Uploading from local path '{base_path}' to s3 path '{common.get_s3_dated_path(date)}'")
         basenames = ['ClusterToLine', 'Tariff', 'TripIdToDate', 'israel-public-transportation']
         for basename in basenames:
             file_path = os.path.join(base_path, f'{basename}.zip')
             if os.path.exists(file_path):
-                upload_rename(file_path, upload_date, basename, 'zip', force)
+                upload_rename(file_path, date, basename, 'zip', force)
             else:
                 print(f"WARNING! missing file: {basename}.zip")

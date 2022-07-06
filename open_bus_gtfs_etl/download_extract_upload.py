@@ -6,7 +6,7 @@ from . import download, extract, upload_to_s3
 
 
 def main(from_mot=False, from_stride=False, date=None, force_download=False, num_retries=None,
-         retry_sleep_seconds=120, silent=False, target_path=None, upload_date=None):
+         retry_sleep_seconds=120, silent=False, target_path=None):
     if from_mot:
         assert not from_stride, 'must choose either from_mot or from_stride, but not both'
         assert not date, 'must not specify date when choosing from_mot - it always downloads latest data'
@@ -43,6 +43,6 @@ def main(from_mot=False, from_stride=False, date=None, force_download=False, num
             traceback.print_exc()
             num_failures += 1
     assert is_success
-    if from_mot or upload_date:
-        upload_to_s3.main(date, upload_date=upload_date, archive_folder=archive_folder)
+    if from_mot:
+        upload_to_s3.main(date, archive_folder=archive_folder)
     return extracted_workdir
