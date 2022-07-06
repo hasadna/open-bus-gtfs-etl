@@ -114,19 +114,17 @@ def process_date(is_today, date, stats):
     needs_processing_download_upload_from_mot = False
     needs_processing_download_from_stride_date = None
     with get_session() as session:
-        if is_today:
-            if session.query(GtfsData).filter(GtfsData.date == date, GtfsData.upload_success == True).count() < 1:
-                print(f'Uploaded data is missing for today ({date}), will download and upload from MOT')
-                needs_processing_download_upload_from_mot = True
-        else:
-            if session.query(GtfsData).filter(GtfsData.date == date, GtfsData.processing_success == True).count() < 1:
-                gtfs_data = session.query(GtfsData).filter(GtfsData.date >= date, GtfsData.upload_success == True) \
-                    .order_by(GtfsData.date).limit(1).one_or_none()
-                assert gtfs_data, f'Failed to find GTFS data with upload_success on or after date {date}'
-                assert (gtfs_data.date - date) <= datetime.timedelta(days=5), \
-                    f'Found GTFS data with upload_success after date {date} but it is more than 5 days away ({gtfs_data.date})'
-                print(f'Processing was not completed for date {date}, will download the data from Stride date {gtfs_data.date}')
-                needs_processing_download_from_stride_date = gtfs_data.date
+        if is_today and session.query(GtfsData).filter(GtfsData.date == date, GtfsData.upload_success == True).count() < 1:
+            print(f'Uploaded data is missing for today ({date}), will download / upload from MOT')
+            needs_processing_download_upload_from_mot = True
+        elif session.query(GtfsData).filter(GtfsData.date == date, GtfsData.processing_success == True).count() < 1:
+            gtfs_data = session.query(GtfsData).filter(GtfsData.date >= date, GtfsData.upload_success == True) \
+                .order_by(GtfsData.date).limit(1).one_or_none()
+            assert gtfs_data, f'Failed to find GTFS data with upload_success on or after date {date}'
+            assert (gtfs_data.date - date) <= datetime.timedelta(days=5), \
+                f'Found GTFS data with upload_success after date {date} but it is more than 5 days away ({gtfs_data.date})'
+            print(f'Processing was not completed for date {date}, will download the data from Stride date {gtfs_data.date}')
+            needs_processing_download_from_stride_date = gtfs_data.date
     if needs_processing_download_upload_from_mot or needs_processing_download_from_stride_date:
         with tempfile.TemporaryDirectory() as workdir:
             if needs_processing_download_upload_from_mot:
