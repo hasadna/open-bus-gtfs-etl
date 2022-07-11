@@ -76,7 +76,7 @@ def main(last_days=None):
                     download_upload_success=True
                 ))
                 session.commit()
-            elif gtfs_data.download_upload_success is False:
+            elif gtfs_data.download_upload_success is None:
                 print(f'Updating gtfs_data for date {date} with download_upload_success=True')
                 gtfs_data.download_upload_started_at = None
                 gtfs_data.download_upload_completed_at = None
@@ -85,7 +85,7 @@ def main(last_days=None):
                 session.commit()
         for date in iterate_last_dates(last_days):
             gtfs_data = session.query(GtfsData).filter(GtfsData.date == date).one_or_none()
-            if gtfs_data is None or gtfs_data.processing_success is False:
+            if gtfs_data is None or gtfs_data.processing_success is None:
                 num_ride_stops = list(session.execute(dedent(f"""
                     select count(1)
                     from gtfs_ride_stop, gtfs_stop, gtfs_ride, gtfs_route
