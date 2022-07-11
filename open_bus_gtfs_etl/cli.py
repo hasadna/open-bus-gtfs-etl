@@ -97,6 +97,9 @@ def idempotent_download_upload():
 
 @main.command()
 @click.option('--last-days')
+@click.option('--only-s3', is_flag=True)
+@click.option('--only-db', is_flag=True)
+@click.option('--only-date')
 def update_gtfs_data_db(**kwargs):
     """Update the gtfs data in the DB from the S3 bucket / the GTFS db tables"""
     update_gtfs_data_db_api.main(**kwargs)
