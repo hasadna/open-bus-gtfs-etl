@@ -1,3 +1,4 @@
+import os
 import time
 import traceback
 
@@ -5,7 +6,7 @@ from . import download, extract, upload_to_s3
 
 
 def main(from_mot=False, from_stride=False, date=None, force_download=False, num_retries=None,
-         retry_sleep_seconds=120, silent=False):
+         retry_sleep_seconds=120, silent=False, target_path=None):
     if from_mot:
         assert not from_stride, 'must choose either from_mot or from_stride, but not both'
         assert not date, 'must not specify date when choosing from_mot - it always downloads latest data'
@@ -20,22 +21,28 @@ def main(from_mot=False, from_stride=False, date=None, force_download=False, num
     retry_sleep_seconds = int(retry_sleep_seconds)
     num_failures = 0
     is_success = False
+    if target_path:
+        archive_folder = os.path.join(target_path, 'archive')
+        extracted_workdir = os.path.join(target_path, 'extracted')
+    else:
+        archive_folder, extracted_workdir = None, None
     while not is_success and num_failures < num_retries:
         if num_failures > 0:
             print(f'failure {num_failures}/{num_retries}, will try again in {retry_sleep_seconds} seconds...')
             time.sleep(retry_sleep_seconds)
         if from_mot:
-            date = download.from_mot()
+            date = download.from_mot(archive_folder=archive_folder)
         else:
-            date = download.from_stride(date, force_download, silent=silent)
+            date = download.from_stride(date, force_download, silent=silent, archive_folder=archive_folder)
         if not silent:
             print(f'Downloaded date: {date}, proceeding with extract..')
         try:
-            extract.main(date, silent=silent)
+            extract.main(date, silent=silent, archive_folder=archive_folder, extracted_workdir=extracted_workdir)
             is_success = True
         except extract.ExtractUnzipException:
             traceback.print_exc()
             num_failures += 1
     assert is_success
     if from_mot:
-        upload_to_s3.main(date)
+        upload_to_s3.main(date, archive_folder=archive_folder)
+    return extracted_workdir

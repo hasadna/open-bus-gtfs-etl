@@ -39,6 +39,15 @@ def parse_date_str(date):
     return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
 
+def parse_None(val):
+    # due to a problem with airflow dag initialization, in some cases we get
+    # the actual string 'None' which we need to handle as None
+    if val is None or val == 'None':
+        return None
+    else:
+        return val
+
+
 def get_dated_workdir(date):
     return os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'workdir', date.strftime('%Y/%m/%d'))
 
@@ -48,7 +57,19 @@ def get_dated_path(date, *args):
 
 
 def get_s3_dated_path(date, *args):
-    return os.path.join(f's3://{config.OPEN_BUS_STRIDE_PUBLIC_S3_BUCKET_NAME}/{config.GTFS_ARCHIVE_FOLDER}/{date.strftime("%Y/%m/%d")}', *args)
+    s3_path = get_s3_path(
+        config.GTFS_ARCHIVE_FOLDER,
+        date.strftime("%Y/%m/%d"),
+        *args
+    )
+    return os.path.join(f's3://{config.OPEN_BUS_STRIDE_PUBLIC_S3_BUCKET_NAME}', s3_path)
+
+
+def get_s3_path(*args):
+    if config.OPEN_BUS_STRIDE_PUBLIC_S3_OBJECT_PREFIX:
+        return os.path.join(config.OPEN_BUS_STRIDE_PUBLIC_S3_OBJECT_PREFIX, *args)
+    else:
+        return os.path.join(*args)
 
 
 @contextmanager

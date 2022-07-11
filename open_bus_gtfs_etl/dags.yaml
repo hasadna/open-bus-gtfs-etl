@@ -1,129 +1,31 @@
-- name: gtfs-etl
-  schedule_interval: "@daily"
+- name: gtfs-etl-download-upload
+  schedule_interval: "@hourly"
   description: |
-    Load GTFS data to DB
+    Idempotent scheduled task which ensures GTFS data was downloaded for today and uploaded to S3
   docs:
     desc: |
-      Daily scheduled job which runs on midnight and downloads the GTFS data from MOT of current day and updates it in the Stride DB.
-      
-      Loads the data to the DB tables: [[gtfs_stop]], [[gtfs_route]], [[gtfs_ride]], [[gtfs_ride_stop]], [[gtfs_stop_mot_id]].
-      
-      Source data is also publically available in the following format: 
+      Runs hourly, downloads the daily GTFS data from MOT if not downloaded yet and uploads to S3
+      Downloaded data is available in the following format:
       `https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/year/month/dat/filename`,
       for example: https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/2022/06/03/ClusterToLine.zip
       possible values for filename: `ClusterToLine.zip`, `Tariff.zip`, `TripIdToDate.zip`, `israel-public-transportation.zip`.
-      
-      When all loading to DB is done, it triggers the following job: [[stride-etl-gtfs-update-ride-aggregations]]
   tasks:
-    - id: download_extract
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: download_extract
-        kwargs:
-          from_mot: {default: true}
-          from_stride: {default: false}
-          date: {}
-          force_download: {}
-          num_retries: {default: 10}
-          retry_sleep_seconds: {default: 120}
-    - id: load_stops_to_db
-      depends_on:
-        - download_extract
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: load_stops_to_db
-        kwargs:
-          date: {}
-    - id: load_routes_to_db
-      depends_on:
-        - download_extract
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: load_routes_to_db
-        kwargs:
-          date: {}
-    - id: load_trips_to_db
-      depends_on:
-        - load_routes_to_db
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: load_trips_to_db
-        kwargs:
-          date: {}
-    - id: load_stop_times_to_db
-      depends_on:
-        - load_trips_to_db
-        - load_stops_to_db
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: load_stop_times_to_db
-        kwargs:
-          date: {}
-          limit: {}
-          debug: {}
-    - id: cleanup-dated-paths
-      depends_on:
-        - download_extract
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: cleanup_dated_paths
-        kwargs:
-          num_days_keep: {default: 10}
-          num_weeklies_keep: {default: 10}
-    - id: trigger-stride-etl-gtfs-update-ride-aggregations-dag
-      depends_on:
-        - load_stops_to_db
-        - load_routes_to_db
-        - load_trips_to_db
-        - load_stop_times_to_db
-      config:
-        type: trigger_dag
-        trigger_dag_id: stride-etl-gtfs-update-ride-aggregations
-        pass_conf_params: [date]
-    - id: cleanup_workdir
-      depends_on:
-        - trigger-stride-etl-gtfs-update-ride-aggregations-dag
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: cleanup_workdir
-        kwargs:
-          date: {}
-
-- name: gtfs-etl-upload-to-s3
-  description: |
-    Manual trigger for uploading GTFS data to S3
-  docs:
-    hide: true
-  tasks:
-    - id: upload_to_s3
-      config:
-        type: cli
-        module: open_bus_gtfs_etl.cli
-        function: upload_to_s3
-        kwargs:
-          date: {}
-          force: {}
-          upload_all: {}
-
-- name: gtfs-etl-load-missing-data
-  description: |
-    Manual trigger for loading missing data to the DB
-    {"from_date": "2022-03-19", "to_date": "2022-03-15"}
-  docs:
-    hide: true
-  tasks:
-    - id: load_missing_data
+    - id: download-upload
       config:
         type: api
-        module: open_bus_gtfs_etl.load_missing_data
+        module: open_bus_gtfs_etl.idempotent_download_upload
         function: main
-        kwargs:
-          from_date: {}
-          to_date: {}
+
+- name: gtfs-etl-process
+  schedule_interval: "@hourly"
+  description: |
+    Idempotent scheduled task which ensures GTFS data was processed for all dates which we have data for
+  docs:
+    desc: |
+      Runs hourly, iterates over all dates for which we have data for and makes sure all of them were processed
+  tasks:
+    - id: process
+      config:
+        type: api
+        module: open_bus_gtfs_etl.idempotent_process
+        function: main
