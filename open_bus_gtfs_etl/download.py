@@ -16,7 +16,8 @@ def from_mot(archive_folder=None):
 def from_stride(date, force_download, silent=False, archive_folder=None):
     date = common.parse_date_str(date)
     assert date, 'must provide date or download analyzed data'
-    base_url = f'https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/{date.strftime("%Y/%m/%d")}/'
+    s3_path = common.get_s3_path('gtfs_archive', date.strftime("%Y/%m/%d"))
+    base_url = f'https://openbus-stride-public.s3.eu-west-1.amazonaws.com/{s3_path}/'
     if not archive_folder:
         base_path = os.path.join(config.GTFS_ETL_ROOT_ARCHIVES_FOLDER, 'gtfs_archive', date.strftime('%Y/%m/%d'))
     else:

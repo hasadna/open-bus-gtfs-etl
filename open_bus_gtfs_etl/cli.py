@@ -8,8 +8,9 @@ from . import (
     load_stop_times_to_db as load_stop_times_to_db_api,
     cleanup_dated_paths as cleanup_dated_paths_api,
     cleanup_workdir as cleanup_workdir_api,
-    full_process as full_process_api,
-    update_gtfs_data_db_from_s3 as update_gtfs_data_db_from_s3_api,
+    idempotent_process as idempotent_process_api,
+    idempotent_download_upload as idempotent_download_upload_api,
+    update_gtfs_data_db as update_gtfs_data_db_api,
 )
 
 
@@ -84,14 +85,18 @@ def cleanup_workdir(**kwargs):
 
 @main.command()
 @click.option('--last-days')
-@click.option('--max-run-time-seconds')
 @click.option('--only-date')
-def full_process(**kwargs):
-    full_process_api.main(**kwargs)
+def idempotent_process(**kwargs):
+    idempotent_process_api.main(**kwargs)
+
+
+@main.command()
+def idempotent_download_upload():
+    idempotent_download_upload_api.main()
 
 
 @main.command()
 @click.option('--last-days')
-def update_gtfs_data_db_from_s3(**kwargs):
-    """Update the gtfs data in the DB from the S3 bucket"""
-    update_gtfs_data_db_from_s3_api.main(**kwargs)
+def update_gtfs_data_db(**kwargs):
+    """Update the gtfs data in the DB from the S3 bucket / the GTFS db tables"""
+    update_gtfs_data_db_api.main(**kwargs)

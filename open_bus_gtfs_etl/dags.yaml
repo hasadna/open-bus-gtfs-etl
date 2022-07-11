@@ -1,21 +1,31 @@
-- name: gtfs-etl-full-process
+- name: gtfs-etl-download-upload
   schedule_interval: "@hourly"
   description: |
-    Idempotent scheduled task which ensures GTFS data integrity for last 30 days
+    Idempotent scheduled task which ensures GTFS data was downloaded for today and uploaded to S3
   docs:
     desc: |
-      Runs hourly, downloads the daily GTFS data from MOT if not downloaded yet.
-      Downloaded data is also made publically available in the following format:
+      Runs hourly, downloads the daily GTFS data from MOT if not downloaded yet and uploads to S3
+      Downloaded data is available in the following format:
       `https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/year/month/dat/filename`,
       for example: https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/2022/06/03/ClusterToLine.zip
       possible values for filename: `ClusterToLine.zip`, `Tariff.zip`, `TripIdToDate.zip`, `israel-public-transportation.zip`.
   tasks:
-    - id: full-process
+    - id: download-upload
       config:
         type: api
-        module: open_bus_gtfs_etl.full_process
+        module: open_bus_gtfs_etl.idempotent_download_upload
         function: main
-        kwargs:
-          last_days: {}
-          max_run_time_seconds: {}
-          only_date: {}
+
+- name: gtfs-etl-process
+  schedule_interval: "@hourly"
+  description: |
+    Idempotent scheduled task which ensures GTFS data was processed for all dates which we have data for
+  docs:
+    desc: |
+      Runs hourly, iterates over all dates for which we have data for and makes sure all of them were processed
+  tasks:
+    - id: process
+      config:
+        type: api
+        module: open_bus_gtfs_etl.idempotent_process
+        function: main
