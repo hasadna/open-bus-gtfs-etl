@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict, List
 from urllib import request
 from urllib.error import URLError
+import ssl
 
 from pydantic import BaseModel
 from tqdm import tqdm
@@ -107,6 +108,9 @@ class GtfsRetriever:
 
     @staticmethod
     def download_file_from_ftp(url, local_file: Path):
-        with closing(request.urlopen(url)) as downloaded_content:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with closing(request.urlopen(url, context=ctx)) as downloaded_content:
             with local_file.open('wb') as target_file:
                 shutil.copyfileobj(downloaded_content, target_file)
