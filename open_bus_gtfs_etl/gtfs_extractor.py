@@ -37,19 +37,19 @@ class GtfsExtractorConfig(BaseModel):
 
 GTFS_EXTRACTOR_CONFIG: GtfsExtractorConfig = GtfsExtractorConfig.parse_obj({
   "gtfs_file": {
-    "url": "ftp://gtfs.mot.gov.il/israel-public-transportation.zip",
+    "url": "https://gtfs.mot.gov.il/gtfsfiles/israel-public-transportation.zip",
     "local_name": "israel-public-transportation.zip"
   },
   "tariff_file": {
-    "url": "ftp://gtfs.mot.gov.il/Tariff.zip",
+    "url": "https://gtfs.mot.gov.il/gtfsfiles/Tariff.zip",
     "local_name": "Tariff.zip"
   },
   "cluster_file": {
-    "url": "ftp://gtfs.mot.gov.il/ClusterToLine.zip",
+    "url": "https://gtfs.mot.gov.il/gtfsfiles/ClusterToLine.zip",
     "local_name": "ClusterToLine.zip"
   },
   "trip_id_to_date_file": {
-    "url": "ftp://gtfs.mot.gov.il/TripIdToDate.zip",
+    "url": "https://gtfs.mot.gov.il/gtfsfiles/TripIdToDate.zip",
     "local_name": "TripIdToDate.zip"
   },
   "download_retries_delay": [30, 60, 120, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240]
