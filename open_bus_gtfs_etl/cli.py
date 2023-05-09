@@ -11,6 +11,7 @@ from . import (
     idempotent_process as idempotent_process_api,
     idempotent_download_upload as idempotent_download_upload_api,
     update_gtfs_data_db as update_gtfs_data_db_api,
+    clear_data_for_date as clear_data_for_date_api,
 )
 
 
@@ -103,3 +104,10 @@ def idempotent_download_upload():
 def update_gtfs_data_db(**kwargs):
     """Update the gtfs data in the DB from the S3 bucket / the GTFS db tables"""
     update_gtfs_data_db_api.main(**kwargs)
+
+
+@main.command()
+@click.argument("DATES", nargs=-1)
+def clear_data_for_date(dates):
+    """Clear all gtfs data for a given date, allowing to reprocess it"""
+    clear_data_for_date_api.main(dates)
