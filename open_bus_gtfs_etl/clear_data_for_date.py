@@ -4,15 +4,15 @@ from textwrap import dedent
 
 def main(dates):
     dates_where = []
-    date_commands = []
     for date in dates:
         dates_where.append(f"'{common.parse_date_str(date)}'")
-        date_commands.append(f'-- open-bus-gtfs-etl idempotent-process --only-date {date}')
     dates_where = 'date in (' + ', '.join(dates_where) + ')'
-    date_commands = '\n'.join(date_commands)
     print(dedent(f"""
+
+-- Before attempting this you should stop the gtfs processing dags
     
--- Delete all gtfs date details, note that this is highly dependant on the current state of the code and it might not work in the future
+-- Following SQL deletes all gtfs date details
+-- note that this is highly dependant on the current state of the code and it might not work in the future
 -- Last updated: May 9, 2023
 
 update siri_ride set route_gtfs_ride_id = null, scheduled_time_gtfs_ride_id = null, journey_gtfs_ride_id = null, gtfs_ride_id = null
@@ -67,8 +67,6 @@ set
     download_upload_success = true
 where {dates_where};
 
--- To recreate the data - exec shell on airflow-scheduler pod and run the following:
--- source $STRIDE_VENV/bin/activate
-{date_commands}
+-- The hourly gtfs processing task should now be able to process the data
 
     """))
