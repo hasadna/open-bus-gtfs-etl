@@ -11,7 +11,7 @@ from . import (
     idempotent_process as idempotent_process_api,
     idempotent_download_upload as idempotent_download_upload_api,
     update_gtfs_data_db as update_gtfs_data_db_api,
-    clear_data_for_date as clear_data_for_date_api,
+    reprocess_data as reprocess_data_api,
 )
 
 
@@ -108,6 +108,6 @@ def update_gtfs_data_db(**kwargs):
 
 @main.command()
 @click.argument("DATES", nargs=-1)
-def clear_data_for_date(dates):
-    """Clear all gtfs data for a given date, allowing to reprocess it"""
-    clear_data_for_date_api.main(dates)
+def reprocess_data(dates):
+    """Reprocess data for given dates"""
+    reprocess_data_api.main(dates)
