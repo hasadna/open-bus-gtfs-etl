@@ -24,7 +24,7 @@ def from_stride(date, force_download, silent=False, archive_folder=None):
         base_path = archive_folder
     if not silent:
         print(f"Downloading GTFS files from {base_url} to {base_path}")
-    if date.strftime("%Y-%m-%d") in ('2023-03-25', '2023-03-26', '2023-03-27', '2023-03-28', '2023-03-29', '2023-04-01', '2023-04-02'):
+    if date.strftime("%Y-%m-%d") in ('2023-03-26', '2023-03-27', '2023-03-28', '2023-03-29', '2023-03-30', '2023-04-02'):
         print("WARNING! Only israel-public-transporation.zip is available for given date, other files are missing")
         filenames = ['israel-public-transportation.zip']
     else:

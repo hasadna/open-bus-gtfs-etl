@@ -37,7 +37,7 @@ def main(date, silent=False, archive_folder=None, extracted_workdir=None):
         os.makedirs(extracted_path, exist_ok=True)
         if subprocess.call(['unzip', zip_file_name], cwd=extracted_path, **({'stdout': subprocess.DEVNULL} if silent else {})) != 0:
             if (
-                date.strftime("%Y-%m-%d") in ('2023-03-25', '2023-03-26', '2023-03-27', '2023-03-28', '2023-03-29', '2023-04-01', '2023-04-02')
+                date.strftime("%Y-%m-%d") in ('2023-03-26', '2023-03-27', '2023-03-28', '2023-03-29', '2023-03-30', '2023-04-02')
                 and zip_file_name != gtfs_file_path
             ):
                 print("WARNING! Only israel-public-transporation.zip is available for given date, other files are missing")
