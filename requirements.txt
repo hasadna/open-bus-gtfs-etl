@@ -11,3 +11,4 @@ numpy==1.21.2
 psutil==5.9.0
 kvfile==0.0.13
 plyvel==1.4.0
+https://github.com/OriHoch/partridge/archive/refs/heads/v0.11.0-add-support-for-invalid-time-parsing.zip#egg=partridge
