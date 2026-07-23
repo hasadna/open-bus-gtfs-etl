@@ -32,7 +32,7 @@ def main():
               help="Number of retries to make in case of problems, relevant only with --from-mot, defaults to 10 retries")
 @click.option('--retry-sleep-seconds', default=120)
 def download_extract(**kwargs):
-    """Downloads the daily gtfs data, store in a directory structure: gtfs_data/YEAR/MONTH/DAY
+    """Downloads the daily gtfs data, store in a directory structure: gtfs_archive/YEAR/MONTH/DAY
     and extract to dated workdir"""
     download_extract_api.main(**kwargs)
 

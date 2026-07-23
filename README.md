@@ -1,4 +1,4 @@
-![](https://github.com/hasadna/open-bus-gtfs-etl/actions/workflows/CI.yml/badge.svg?branch=main) [![codecov](https://codecov.io/gh/hasadna/open-bus-gtfs-etl/branch/main/graph/badge.svg?token=JJDM2TRBA8)](https://codecov.io/gh/hasadna/open-bus-gtfs-etl)
+![](https://github.com/hasadna/open-bus-gtfs-etl/actions/workflows/CI.yml/badge.svg?branch=main)
 
 # open-bus-gtfs-etl
 GTFS ETL for Stride.
