@@ -6,6 +6,7 @@ from pathlib import Path
 from contextlib import contextmanager
 
 import psutil
+import pytz
 import requests
 
 from . import config
@@ -30,12 +31,25 @@ def http_stream_download(filename, **requests_kwargs):
                     f.write(chunk)
 
 
+ISRAEL_TIMEZONE = pytz.timezone('Asia/Jerusalem')
+
+
+def israel_now():
+    return datetime.datetime.now(ISRAEL_TIMEZONE)
+
+
+def israel_today():
+    # GTFS dates are Israeli service days; the servers run on UTC, where the date changes
+    # only at 02:00/03:00 Israel time
+    return israel_now().date()
+
+
 def parse_date_str(date):
-    """Parses a date string in format %Y-%m-%d with default of today if empty"""
+    """Parses a date string in format %Y-%m-%d with default of today (Israel time) if empty"""
     if isinstance(date, datetime.date):
         return date
     if not date:
-        return datetime.date.today()
+        return israel_today()
     return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
 

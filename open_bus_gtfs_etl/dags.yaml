@@ -1,10 +1,12 @@
 - name: gtfs-etl-download-upload
   schedule_interval: "@hourly"
   description: |
-    Idempotent scheduled task which ensures GTFS data was downloaded for today and uploaded to S3
+    Idempotent scheduled task which ensures GTFS data was downloaded for today (and from 20:00 Israel time, for tomorrow) and uploaded to S3
   docs:
     desc: |
-      Runs hourly, downloads the daily GTFS data from MOT if not downloaded yet and uploads to S3
+      Runs hourly, downloads the daily GTFS data from MOT if not downloaded yet and uploads to S3.
+      MOT publishes the file for a date on the evening before, so from 20:00 Israel time the next day's file is downloaded,
+      and it is archived under the date it is for (the earliest start_date in its calendar.txt).
       Downloaded data is available in the following format:
       `https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/year/month/dat/filename`,
       for example: https://openbus-stride-public.s3.eu-west-1.amazonaws.com/gtfs_archive/2022/06/03/ClusterToLine.zip
