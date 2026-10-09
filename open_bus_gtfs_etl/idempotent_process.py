@@ -18,8 +18,10 @@ DEFAULT_LAST_DAYS = (datetime.datetime.now(datetime.timezone.utc).date() - EARLI
 
 
 def iterate_last_dates(last_days):
-    for minus_days in range(last_days+1):
-        yield datetime.date.today() - datetime.timedelta(days=minus_days)
+    # starts from tomorrow, whose file MOT publishes the evening before (see idempotent_download_upload)
+    today = common.israel_today()
+    for minus_days in range(-1, last_days+1):
+        yield today - datetime.timedelta(days=minus_days)
 
 
 def download_from_stride(workdir, from_stride_date, stats):
@@ -97,6 +99,10 @@ def check_date(date):
         if session.query(GtfsData).filter(GtfsData.date == date, GtfsData.processing_success == True).count() < 1:
             gtfs_data = session.query(GtfsData).filter(GtfsData.date <= date, GtfsData.download_upload_success == True) \
                 .order_by(GtfsData.date.desc()).limit(1).one_or_none()
+            if date > common.israel_today() and (gtfs_data is None or gtfs_data.date != date):
+                # a future date is processed only from its own file - falling back to today's file
+                # would mark it processed with the older plan, and it would never be redone
+                return None
             assert gtfs_data, f'Failed to find GTFS data with upload_success on or after date {date}'
             assert (date - gtfs_data.date) <= datetime.timedelta(days=10), \
                 f'Found GTFS data with upload_success after date {date} but it is more than 10 days away ({gtfs_data.date})'

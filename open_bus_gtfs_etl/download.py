@@ -1,11 +1,30 @@
+import io
 import os
+import csv
+import zipfile
 import datetime
 
 from . import common, config, gtfs_extractor
 
 
-def from_mot(archive_folder=None):
-    date: datetime.date = datetime.date.today()
+def get_service_date(archive_folder):
+    """Returns the date a downloaded MOT GTFS file is for.
+
+    MOT publishes the file for date D on the evening of D-1, and that file's calendar starts
+    on D - the earliest calendar.txt start_date is D (verified on archived files 2025-10..2026-10).
+    A file still serving the previous day therefore starts a day early.
+    """
+    with zipfile.ZipFile(os.path.join(archive_folder, 'israel-public-transportation.zip')) as gtfs_zip:
+        with gtfs_zip.open('calendar.txt') as f:
+            return min(
+                datetime.datetime.strptime(row['start_date'], '%Y%m%d').date()
+                for row in csv.DictReader(io.TextIOWrapper(f, 'utf-8-sig'))
+            )
+
+
+def from_mot(archive_folder=None, date=None):
+    if not date:
+        date = common.israel_today()
     if not archive_folder:
         archive_folder = common.get_dated_path(date)
     print("Downloading GTFS files to archive folder: {}".format(archive_folder))

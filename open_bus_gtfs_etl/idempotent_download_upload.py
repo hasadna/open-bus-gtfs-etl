@@ -7,7 +7,7 @@ from collections import defaultdict
 from open_bus_stride_db.db import get_session
 from open_bus_stride_db.model import GtfsData
 
-from . import download_extract_upload
+from . import common, download_extract_upload
 
 
 def gtfs_data_download_upload_started(date):
@@ -45,30 +45,51 @@ def update_gtfs_data(gtfs_data_id, error=None, success=None):
         session.commit()
 
 
+# MOT publishes the GTFS file for date D on the evening of D-1. The files are generated between
+# 19:28 and 23:00 Israel time (zip timestamps, 2025-10..2026-10), but can go live hours later -
+# the file generated at 20:06 on 2026-10-08 was still not served at 23:28. From this hour on we
+# try to download the next day's file, and retry hourly until MOT serves it (see expected_date
+# in download_extract_upload), so the day's plan is processed as soon as it is available.
+# Earlier hours keep targeting today, which covers a missed evening.
+NEXT_DAY_FROM_HOUR = 20
+
+
+def get_date_to_download():
+    now = common.israel_now()
+    if now.hour >= NEXT_DAY_FROM_HOUR:
+        return now.date() + datetime.timedelta(days=1)
+    return now.date()
+
+
 def main():
-    """This task is idempotent and makes sure that latest GTFS data for today
-    is available. It uses DB gtfs_data table to keep track. It downloads today's
-    data from MOT and uploads it to S3.
+    """This task is idempotent and makes sure that the latest GTFS data is available:
+    today's, and from the evening the next day's, which MOT publishes the evening before.
+    It uses DB gtfs_data table to keep track. It downloads the data from MOT and uploads it to S3.
     """
     stats = defaultdict(int)
-    date = datetime.date.today()
+    date = get_date_to_download()
     needs_download_upload_from_mot = False
     with get_session() as session:
         if session.query(GtfsData).filter(GtfsData.date == date, GtfsData.download_upload_success == True).count() < 1:
             needs_download_upload_from_mot = True
     if needs_download_upload_from_mot:
-        print(f'Uploaded data is missing for today ({date}), will download / upload from MOT')
+        print(f'Uploaded data is missing for {date}, will download / upload from MOT')
         with tempfile.TemporaryDirectory() as workdir:
             gtfs_data_id = gtfs_data_download_upload_started(date)
             try:
                 stats['download_upload_from_mot'] += 1
-                download_extract_upload.main(from_mot=True, target_path=workdir)
+                download_extract_upload.main(from_mot=True, target_path=workdir, expected_date=date)
+            except download_extract_upload.MotFileNotForDate as e:
+                # MOT hasn't published the file yet - expected on late evenings, the next hourly run retries
+                print(f'{e}, will try again on the next run')
+                stats['mot_file_not_published_yet'] += 1
+                update_gtfs_data(gtfs_data_id, error=str(e))
             except:
                 update_gtfs_data(gtfs_data_id, error=traceback.format_exc())
                 raise
             else:
                 update_gtfs_data(gtfs_data_id, success=True)
     else:
-        print(f'Uploaded data is already available for today ({date}), will not download / upload from MOT')
+        print(f'Uploaded data is already available for {date}, will not download / upload from MOT')
     pprint(dict(stats))
     print('OK')
