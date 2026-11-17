@@ -33,6 +33,7 @@ class GtfsExtractorConfig(BaseModel):
     tariff_file: FileConfig
     cluster_file: FileConfig
     trip_id_to_date_file: FileConfig
+    route_networks_file: FileConfig
     download_retries_delay: List[int]
 
 
@@ -53,6 +54,12 @@ GTFS_EXTRACTOR_CONFIG: GtfsExtractorConfig = GtfsExtractorConfig.parse_obj({
     "url": "https://gtfs.mot.gov.il/gtfsfiles/TripIdToDate.zip",
     "local_name": "TripIdToDate.zip"
   },
+  "route_networks_file": {
+    # published with MOT's new GTFS format, whose routes.txt has no route_desc - it is the only source of
+    # route_mkt / route_direction / route_alternative there. Archived without MOT's "_10_Days" suffix.
+    "url": "https://gtfs.mot.gov.il/gtfsfiles/RouteNetworksByDate_10_Days.zip",
+    "local_name": "RouteNetworksByDate.zip"
+  },
   "download_retries_delay": [30, 60, 120, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240]
 })
 
@@ -65,6 +72,7 @@ class GTFSFiles(BaseModel):
     tariff: Path
     cluster_to_line: Path
     trip_id_to_date: Path
+    route_networks: Path
 
 
 class GtfsRetriever:
@@ -81,7 +89,8 @@ class GtfsRetriever:
         args: Dict[str, FileConfig] = dict(gtfs=self.app_config.gtfs_file,
                                            tariff=self.app_config.tariff_file,
                                            cluster_to_line=self.app_config.cluster_file,
-                                           trip_id_to_date=self.app_config.trip_id_to_date_file)
+                                           trip_id_to_date=self.app_config.trip_id_to_date_file,
+                                           route_networks=self.app_config.route_networks_file)
 
         gtfs_files = GTFSFiles(**{k: Path(self.folder, v.local_name) for k, v in args.items()})
 
