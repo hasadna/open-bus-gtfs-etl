@@ -49,7 +49,7 @@ def main(date=None, force=False, upload_all=False, archive_folder=None):
         else:
             base_path = common.get_dated_path(date)
         print(f"Uploading from local path '{base_path}' to s3 path '{common.get_s3_dated_path(date)}'")
-        basenames = ['ClusterToLine', 'Tariff', 'TripIdToDate', 'israel-public-transportation']
+        basenames = ['ClusterToLine', 'Tariff', 'TripIdToDate', 'israel-public-transportation', 'RouteNetworksByDate']
         for basename in basenames:
             file_path = os.path.join(base_path, f'{basename}.zip')
             if os.path.exists(file_path):
